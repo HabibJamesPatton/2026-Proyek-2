@@ -1,13 +1,15 @@
-#define HABIB_H
 #ifndef HABIB_H
+#define HABIB_H
+
 
 // Deklrasi konstanta yang akan dipakai array untuk menyimpan buffer
 #define MAX_ROWS 100
 #define MAX_COLS 256
 
 // Deklarasi konstanta untuk hotkey
-#define KEY_ENTER 13
-#define KEY_BACKSPACE 8
+// Dipanggil dengan 'getch();' untuk membaca input tombol dari user
+#define KEY_ENTER 13 // Angka yang diinisialisasi adalah ASCII
+#define KEY_BACKSPACE 8 
 #define KEY_ESCAPE 27
 
 
