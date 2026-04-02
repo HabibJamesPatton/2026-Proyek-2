@@ -12,7 +12,7 @@ typedef struct {
     bool isFocused;     // Status apakah kanvas sedang aktif/diklik
     char* text;         // Pointer ke isi teks (untuk sementara)
 } KanvasArea;
-
+    
 // Deklarasi fungsi-fungsi GUI
 void UpdateKanvasArea(KanvasArea *textArea);
 void DrawKanvasArea(KanvasArea*textArea);
