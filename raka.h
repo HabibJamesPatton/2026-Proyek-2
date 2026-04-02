@@ -14,7 +14,7 @@ typedef struct {
 } KanvasArea;
 
 // Deklarasi fungsi-fungsi GUI
-void UpdateTextArea(KanvasArea *textArea);
-void DrawTextArea(KanvasArea*textArea);
+void UpdateKanvasArea(KanvasArea *textArea);
+void DrawKanvasArea(KanvasArea*textArea);
 
 #endif

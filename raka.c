@@ -2,7 +2,7 @@
 #include <stddef.h> // Untuk NULL
 
 // Fungsi untuk mengecek interaksi mouse dengan kanvas teks
-void UpdateTextArea(KanvasArea *textArea) {
+void UpdateKanvasArea(KanvasArea *textArea) {
     // Dapatkan posisi koordinat mouse saat ini
     Vector2 mousePoint = GetMousePosition();
 
@@ -18,7 +18,7 @@ void UpdateTextArea(KanvasArea *textArea) {
 }
 
 // Fungsi untuk menggambar kanvas teks ke layar
-void DrawTextArea(KanvasArea *textArea) {
+void DrawKanvasArea(KanvasArea *textArea) {
     // 1. Gambar kotak latar belakang kanvas
     DrawRectangleRec(textArea->Kotak, textArea->bgColor);
 
