@@ -2,18 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include "faleh.h"
+#include "habib.h"
 
 char global_filename[256] = "";
 
-// Fungsi new file //
-void newFile()
+// Fungsi New File //
+void New_File()
     {
         strcpy(global_filename, "");
         printf("[System] Buffer disiapkan untuk file baru (Nama file dikosongkan).\n");
     }
 
-// Fungsi open file //
-void open_file(char *filename)
+// Fungsi Open File //
+void Open_File(char *filename)
     {
         FILE *fptr = fopen(filename, "r");
         if (fptr == NULL) {
@@ -34,7 +35,7 @@ void open_file(char *filename)
         fclose(fptr);
     }
 
-// Fungsi saveAs //
+// Fungsi Save As //
 void SaveAs(char *filename, char *content)
 {
     FILE *fptr = fopen(filename, "w");
@@ -52,12 +53,12 @@ void SaveAs(char *filename, char *content)
     
 }
 
-// Fungsi Save file //
-void save_file(char *content)
+// Fungsi Save File //
+void Save(char *content)
 {
     if (strlen(global_filename) == 0)
     {
-        printf("[warning] Gunakan saveAs terlebih dahulu untuk memberi nama file!\n");
+        printf("[warning] Gunakan SaveAs terlebih dahulu untuk memberi nama file!\n");
         return;
     }
 
@@ -76,8 +77,8 @@ void save_file(char *content)
 
 
 
-// Fungsi close file //
-void close_file()
+// Fungsi Close File //
+void Close_File()
 {
     strcpy(global_filename, "");
     printf("[System] koneksi file diputus, Editor ditutup.\n", global_filename);
