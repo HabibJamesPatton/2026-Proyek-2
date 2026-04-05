@@ -1,51 +1,43 @@
 #ifndef HABIB_H
 #define HABIB_H
 
-
-// Deklrasi konstanta yang akan dipakai array untuk menyimpan buffer
-#define MAX_ROWS 100
-#define MAX_COLS 256
-
-// Deklarasi konstanta untuk hotkey
-// Dipanggil dengan 'getch();' untuk membaca input tombol dari user
-#define KEY_ENTER 13 // Angka yang diinisialisasi adalah ASCII
-#define KEY_BACKSPACE 8 
-#define KEY_ESCAPE 27
-
-
-/*buffer[i][j] -> i mewakili baris dan j mewakili kolom*/
+// --- Struktur Baris Dinamis ---
 typedef struct {
-    char buffer[MAX_ROWS][MAX_COLS];  /* Array 2D utama        */
-    int  line_length[MAX_ROWS];       /* Panjang tiap baris    */
-    int  total_lines;                 /* Total baris terpakai  */
-    int  cursor_row;                  /* Posisi kursor (baris) */
-    int  cursor_col;                  /* Posisi kursor (kolom) */
+    char *data;         // Pointer ke array karakter (isi teks per baris)
+    int length;         // Jumlah karakter yang terisi saat ini
+    int capacity;       // Total memori yang disiapkan untuk baris ini
+} Line;
+
+// --- Struktur Utama Editor ---
+typedef struct {
+    Line *lines;        // Array dinamis dari kumpulan baris (buffer utama)
+    int total_lines;    // Jumlah baris yang ada di editor
+    int lines_capacity; // Kapasitas alokasi baris (untuk penambahan baris)
+    int cursor_row;     // Posisi baris kursor (indeks array)
+    int cursor_col;     // Posisi kolom kursor (indeks karakter)
 } Editor;
 
-// Deklarasi Fungsi
+// --- Inisialisasi & Memori ---
+void editor_init(Editor *ed);   // Menyiapkan memori awal saat aplikasi dibuka
+void editor_free(Editor *ed);   // Menghapus semua alokasi memori (cegah memory leak)
 
-/* Inisialisasi editor — reset semua buffer dan state */
-void editor_init(Editor *ed);
+// --- Logika Pengetikan (Tugas Utama Kamu) ---
+void editor_insert_char(Editor *ed, char ch); // Menambah satu huruf di posisi kursor
+void editor_backspace(Editor *ed);            // Menghapus huruf atau menggabung baris
+void editor_enter(Editor *ed);                // Memecah satu baris menjadi dua baris baru
 
-/* Render/tampilkan isi editor ke layar(sementara) */
-void editor_render(const Editor *ed);
+// ---  Navigasi Untuk (Raka)  ---
+void editor_move_up(Editor *ed);    // Geser kursor ke atas dengan validasi batas
+void editor_move_down(Editor *ed);  // Geser kursor ke bawah dengan validasi batas
+void editor_move_left(Editor *ed);  // Geser kursor ke kiri (bisa pindah baris ke atas)
+void editor_move_right(Editor *ed); // Geser kursor ke kanan (bisa pindah baris ke bawah)
 
-/* INSERT: Sisipkan karakter di posisi kursor
- * → menggeser elemen array 2D ke kanan pada baris aktif */
-void editor_insert_char(Editor *ed, char ch);
+// --- Fitur Undo/Redo (Pertemuan 6-7) ---
+Editor* editor_create_snapshot(const Editor *ed);        // Salin state saat ini ke Stack
+void editor_load_snapshot(Editor *dest, const Editor *src); // Ambil state dari Stack ke Editor
 
-/* BACKSPACE: Hapus karakter sebelum kursor
- * → menggeser elemen array 2D ke kiri, atau gabung baris */
-void editor_backspace(Editor *ed);
-
-/* ENTER: Pecah baris di posisi kursor
- * → menggeser baris-baris di array 2D ke bawah */
-void editor_enter(Editor *ed);
-
-/* Navigasi kursor (arrow keys) */
-void editor_move_up(Editor *ed);
-void editor_move_down(Editor *ed);
-void editor_move_left(Editor *ed);
-void editor_move_right(Editor *ed);
+// ---  File Operations (Faleh) ---
+void editor_append_line(Editor *ed, const char *text);      // Masukkan teks hasil Load File
+const char* editor_get_line_text(const Editor *ed, int row); // Ambil teks untuk proses Save File
 
 #endif
