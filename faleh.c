@@ -4,74 +4,79 @@
 #include <string.h>
 
 // Fungsi new file //
-void new_file(char buffer[MAX_ROWS][MAX_COLS], int *row_count)
+void newFile()
     {
-        *row_count = 0;
         strcpy(global_filename, "");
-
-        for(int i = 0; i < MAX_ROWS; i++) {
-            buffer[i][0] = '\0';
-        }
-        printf("[system] Buffer dikosongkan, siap membuat file baru.\n")
+        printf("[System] Buffer disiapkan untuk file baru (Nama file dikosongkan).\n");
     }
 
 // Fungsi open file //
-void open_file(char buffer[MAX_ROWS][MAX_COLS], int *row_count, char *target_file)
+void open_file(char *filename)
     {
         FILE *fptr = fopen(target_file, "r");
         if (fptr == NULL) {
-            printf("[ERROR] Gagal membuka file. File tidak ditemukan!\n");
+            printf("[Error] Gagal membuka file '%s'. Tidak ditemukan!\n", filename);
             return;
         }
 
-        int current_row = 0;
-        while (fgets(buffer[current_row], MAX_COLS, fptr) && current_row < MAX_ROWS) 
-        {
-            buffer[current_row][strcspn(buffer[current_row], "\n")] = 0;
-        }
+        strcpy(global_filename, filename);
+        printf("[System] Membuka file: %s\n", filename);
 
-        *row_count = current_row;
-        strcpy(global_filename, target_file);
-        fclose(fptr);
-        printf("[system] File '%s' berhasil dimuat ke buffer.\n", target_file);
-    }
-
-// Fungsi Save file //
-void save_file(char buffer[MAX_ROWS][MAX_COLS], int row_count)
-    {
-        if (strlen(global_filename) == 0) 
+        char c;
+        while ((c = fgets(fptr)) != EOF) 
         {
-            printf("[System] File belum memiliki nama. Gunakan Save As!\n");
-            return;
+            printf("%c", c)
         }
-
-        FILE *fptr = fopen(global_filename, "w");
-        if (fptr == NULL)
-        {
-            printf("[ERROR] Gagal menyimpan file!\n");
-            return;
-        }
-
-        for (int i = 0; i < row_count; i++)
-        {
-            fprintf(fptr, "%s\n", buffer[i]);
-        }
+        printf("\n-------------\n");
 
         fclose(fptr);
-        printf("[system] Perubahan berhasil disimpan ke '%s'.\n", global_filename);
     }
 
 // Fungsi saveAs //
-void save_as_file(char buffer[MAX_ROWS][MAX_COLS], int row_count, char *new_name)
+void SaveAs(char *filename, char *content)
+{
+    FILE *fptr = fopen(filename, "w");
+    if (fpte == NULL) 
     {
-        strcpy(global_filename, new_name);
-        save_file(buffer, row_count);
+        printf("[Error] Tidak bisa membuat file '%s'!\n", filename);
+        return;
     }
 
-// Fungsi close file //
-void close_file(int *row_count)
+    fprintf(fptr, "%s", content);
+    strcpy(global_filename, filename);
+    fclose(fptr);
+    printf("[System] File berhasil disimpan sebagai: %s\n", filename);
+
+    
+}
+
+// Fungsi Save file //
+void save_file(char *content)
+{
+    if (strlen(global_filenmae) == 0)
     {
-        *row_count =0;
-        strcpy(global_filename, "");
-        printf("[system] File ditutup. Buffer dibersihkan.\n");
+        printf("[warning] Gunakan saveAs terlebih dahulu untuk memberi nama file!\n");
+        return
     }
+
+    FILE *fptr = fopen(global_filename, "w");
+    if (fptr == NULL)
+    {
+        printf("[Error] Gagal menyimpan file!\n");
+        return;
+        
+    }
+
+    fprintf(fptr, "%s", content);
+    fclose(fptr);
+    printf("[System] Perubahan pada '%s' berhasil disimpan. \n", global_filename);
+}
+
+
+
+// Fungsi close file //
+void close_file()
+{
+    strcpy(global_filename, "");
+    printf("[System] koneksi file diputus, Editor ditutup.\n", global_filename);
+}
