@@ -1,7 +1,9 @@
-#include "faleh.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "faleh.h"
+
+char global_filename[256] = "";
 
 // Fungsi new file //
 void newFile()
@@ -13,7 +15,7 @@ void newFile()
 // Fungsi open file //
 void open_file(char *filename)
     {
-        FILE *fptr = fopen(target_file, "r");
+        FILE *fptr = fopen(filename, "r");
         if (fptr == NULL) {
             printf("[Error] Gagal membuka file '%s'. Tidak ditemukan!\n", filename);
             return;
@@ -22,10 +24,10 @@ void open_file(char *filename)
         strcpy(global_filename, filename);
         printf("[System] Membuka file: %s\n", filename);
 
-        char c;
-        while ((c = fgets(fptr)) != EOF) 
+        int c;
+        while ((c = fgetc(fptr)) != EOF) 
         {
-            printf("%c", c)
+            printf("%c", (char)c);
         }
         printf("\n-------------\n");
 
@@ -53,10 +55,10 @@ void SaveAs(char *filename, char *content)
 // Fungsi Save file //
 void save_file(char *content)
 {
-    if (strlen(global_filenmae) == 0)
+    if (strlen(global_filename) == 0)
     {
         printf("[warning] Gunakan saveAs terlebih dahulu untuk memberi nama file!\n");
-        return
+        return;
     }
 
     FILE *fptr = fopen(global_filename, "w");
