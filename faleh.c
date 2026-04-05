@@ -38,7 +38,7 @@ void open_file(char *filename)
 void SaveAs(char *filename, char *content)
 {
     FILE *fptr = fopen(filename, "w");
-    if (fpte == NULL) 
+    if (fptr == NULL) 
     {
         printf("[Error] Tidak bisa membuat file '%s'!\n", filename);
         return;
