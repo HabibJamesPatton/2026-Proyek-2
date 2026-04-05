@@ -256,7 +256,7 @@ void editor_load_snapshot(Editor *dest, const Editor *src) {
     }
 }
 
-// API FILE OPERATIONS (Faleh)
+// FILE OPERATIONS (Faleh)
 
 void editor_append_line(Editor *ed, const char *text) {
     // Cek batas array utama
@@ -284,5 +284,5 @@ const char* editor_get_line_text(const Editor *ed, int row) {
     if (row >= 0 && row < ed->total_lines) {
         return ed->lines[row].data;
     }
-    return NULL; // Pengaman jika Ableh meminta baris yang tidak ada
+    return NULL; // Pengaman jika Faleh meminta baris yang tidak ada
 }

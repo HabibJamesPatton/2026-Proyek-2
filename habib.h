@@ -21,12 +21,12 @@ typedef struct {
 void editor_init(Editor *ed);   // Menyiapkan memori awal saat aplikasi dibuka
 void editor_free(Editor *ed);   // Menghapus semua alokasi memori (cegah memory leak)
 
-// --- Logika Pengetikan (Tugas Utama Kamu) ---
+// --- Logika Pengetikan  ---
 void editor_insert_char(Editor *ed, char ch); // Menambah satu huruf di posisi kursor
 void editor_backspace(Editor *ed);            // Menghapus huruf atau menggabung baris
 void editor_enter(Editor *ed);                // Memecah satu baris menjadi dua baris baru
 
-// ---  Navigasi Untuk (Raka)  ---
+// ---  Navigasi (Raka)  ---
 void editor_move_up(Editor *ed);    // Geser kursor ke atas dengan validasi batas
 void editor_move_down(Editor *ed);  // Geser kursor ke bawah dengan validasi batas
 void editor_move_left(Editor *ed);  // Geser kursor ke kiri (bisa pindah baris ke atas)
