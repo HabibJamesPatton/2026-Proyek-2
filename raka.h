@@ -2,7 +2,7 @@
 #define RAKA_H
 
 #include "raylib.h"
-#include "habib.h" // Integrasi ke mesin memori (backend) buatan Habib
+#include "habib.h" 
 
 // Struktur data untuk elemen kanvas teks editor
 typedef struct {
