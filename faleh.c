@@ -7,14 +7,17 @@
 char global_filename[256] = "";
 
 // Fungsi New File //
-void New_File()
+void New_File(Editor *ed)
     {
+        editor_free(ed);
+        editor_init(ed);
+
         strcpy(global_filename, "");
         printf("[System] Buffer disiapkan untuk file baru (Nama file dikosongkan).\n");
     }
 
 // Fungsi Open File //
-void Open_File(char *filename)
+void Open_File(Editor *ed, const char *filename)
     {
         FILE *fptr = fopen(filename, "r");
         if (fptr == NULL) {
@@ -22,21 +25,31 @@ void Open_File(char *filename)
             return;
         }
 
+        editor_free(ed);
+        editor_init(ed);
+        ed->total_lines = 0;
+
         strcpy(global_filename, filename);
         printf("[System] Membuka file: %s\n", filename);
 
-        int c;
-        while ((c = fgetc(fptr)) != EOF) 
+        char buffer[2048];
+        while (fgets(buffer, sizeof(buffer), fptr))
         {
-            printf("%c", (char)c);
+            buffer[strcspn(buffer, "\n")] = 0;
+            editor_append_line(ed, "");
         }
-        printf("\n-------------\n");
+
+        if (ed->total_lines == 0)
+        {
+            editor_append_line(ed, "");
+        }
 
         fclose(fptr);
+        
     }
 
 // Fungsi Save As //
-void SaveAs(char *filename, char *content)
+void SaveAs(const Editor *ed, const char *filename)
 {
     FILE *fptr = fopen(filename, "w");
     if (fptr == NULL) 
@@ -45,16 +58,22 @@ void SaveAs(char *filename, char *content)
         return;
     }
 
-    fprintf(fptr, "%s", content);
+    for(int i = 0; i < ed->total_lines; i++)
+    {
+        const char *line_text = editor_get_line_text(ed, i);
+        if(line_text != NULL)
+        {
+            fprintf(fptr, "%s\n", line_text);
+        }
+    }
     strcpy(global_filename, filename);
     fclose(fptr);
     printf("[System] File berhasil disimpan sebagai: %s\n", filename);
-
     
 }
 
 // Fungsi Save File //
-void Save(char *content)
+void Save(const Editor *ed)
 {
     if (strlen(global_filename) == 0)
     {
@@ -70,7 +89,15 @@ void Save(char *content)
         
     }
 
-    fprintf(fptr, "%s", content);
+    for(int i = 0; i < ed->total_lines; i++)
+    {
+        const char *line_text = editor_get_line_text(ed, i);
+        if(line_text != NULL)
+        {
+            fprintf(fptr, "%s\n", line_text);
+        }
+    }
+
     fclose(fptr);
     printf("[System] Perubahan pada '%s' berhasil disimpan. \n", global_filename);
 }
@@ -78,8 +105,9 @@ void Save(char *content)
 
 
 // Fungsi Close File //
-void Close_File()
+void Close_File(Editor *ed)
 {
+    editor_free(ed);
     strcpy(global_filename, "");
-    printf("[System] koneksi file diputus, Editor ditutup.\n", global_filename);
+    printf("[System] koneksi file diputus, Editor ditutup.\n");
 }
