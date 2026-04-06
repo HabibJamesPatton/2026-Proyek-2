@@ -33,6 +33,12 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         textArea->scrollY -= GetMouseWheelMove() * 30; // 30px per scroll
         if (textArea->scrollY < 0) textArea->scrollY = 0;
 
+        int tinggiTeksTotal = textArea->editor->total_lines * 20;
+        int maxScrollY = tinggiTeksTotal - textArea->Kotak.height + 20;
+
+        if (maxScrollY < 0) maxScrollY = 0; // Jaga-jaga kalau teksnya sedikit
+        if (textArea->scrollY > maxScrollY) textArea->scrollY = maxScrollY;
+
         // 4. Implementasi Hotkeys (Ctrl+C, Ctrl+X, Ctrl+V)
         bool ctrlDown = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
 
@@ -40,23 +46,37 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             // COPY
             const char* line_text = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
             if (line_text) {
-                strcpy(textArea->clipboard, line_text);
+                strncpy(textArea->clipboard, line_text, sizeof(textArea->clipboard) - 1);
+                textArea->clipboard[sizeof(textArea->clipboard) - 1] = '\0';
             }
         }
         else if (ctrlDown && IsKeyPressed(KEY_X)) {
             // CUT
             const char* line_text = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
             if (line_text) {
-                strcpy(textArea->clipboard, line_text);
+                strncpy(textArea->clipboard, line_text, sizeof(textArea->clipboard) - 1);
+                textArea->clipboard[sizeof(textArea->clipboard) - 1] = '\0';
                 while(textArea->editor->lines[textArea->editor->cursor_row].length > 0) {
                     editor_backspace(textArea->editor);
                 }
             }
         }
         else if (ctrlDown && IsKeyPressed(KEY_V)) {
-            // PASTE
+            // PASTE dengan Auto-Enter kalau mentok
             for (int i = 0; i < strlen(textArea->clipboard); i++) {
-                editor_insert_char(textArea->editor, textArea->clipboard[i]);
+                const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
+                int currentWidth = 0;
+                
+                if (currentLine) {
+                    currentWidth = MeasureText(currentLine, 20); 
+                }
+
+                if (currentWidth + 15 < textArea->Kotak.width - 20) {
+                    editor_insert_char(textArea->editor, textArea->clipboard[i]);
+                } else {
+                    editor_enter(textArea->editor);
+                    editor_insert_char(textArea->editor, textArea->clipboard[i]);
+                }
             }
         }
 
@@ -81,7 +101,16 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         while (charPressed > 0) {
             // Pastikan karakter adalah ASCII yang bisa diprint (32 sampai 125)
             if ((charPressed >= 32) && (charPressed <= 125)) {
-                editor_insert_char(textArea->editor, (char)charPressed);
+                const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
+                int currentWidth = 0;
+                
+                if (currentLine) {
+                    currentWidth = MeasureText(currentLine, 20); // Mengukur panjang teks saat ini
+                }
+
+                if (currentWidth + 15 < textArea->Kotak.width - 20) {
+                    editor_insert_char(textArea->editor, (char)charPressed);
+                }
             }
             charPressed = GetCharPressed();
         }
