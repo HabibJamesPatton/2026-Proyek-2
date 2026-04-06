@@ -12,8 +12,8 @@ void New_File(Editor *ed)
         editor_free(ed);
         editor_init(ed);
 
-        strcpy(global_filename, "");
-        printf("[System] Buffer disiapkan untuk file baru (Nama file dikosongkan).\n");
+        global_filename[0]='\0';
+        printf("[System] Buffer disiapkan untuk file baru.\n");
     }
 
 // Fungsi Open File //
@@ -21,7 +21,7 @@ void Open_File(Editor *ed, const char *filename)
     {
         FILE *fptr = fopen(filename, "r");
         if (fptr == NULL) {
-            printf("[Error] Gagal membuka file '%s'. Tidak ditemukan!\n", filename);
+            printf("[Error] Gagal membuka file '%s'!\n", filename);
             return;
         }
 
@@ -29,14 +29,15 @@ void Open_File(Editor *ed, const char *filename)
         editor_init(ed);
         ed->total_lines = 0;
 
-        strcpy(global_filename, filename);
+        strncpy(global_filename, filename, sizeof(global_filename)-1);
+        global_filename[sizeof(global_filename)-1] = '\0';
         printf("[System] Membuka file: %s\n", filename);
 
         char buffer[2048];
         while (fgets(buffer, sizeof(buffer), fptr))
         {
             buffer[strcspn(buffer, "\n")] = 0;
-            editor_append_line(ed, "");
+            editor_append_line(ed, buffer);
         }
 
         if (ed->total_lines == 0)
@@ -45,6 +46,7 @@ void Open_File(Editor *ed, const char *filename)
         }
 
         fclose(fptr);
+        printf("[System] Berhasil memuat file: %s\n", filename);
         
     }
 

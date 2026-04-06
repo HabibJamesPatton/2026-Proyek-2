@@ -3,7 +3,7 @@
 #include "habib.h"
 
 //Deklarasi variabel global untuk nama file extern char global_filename[256];
-
+extern char global_filename[256];
 //Deklarasi Fungsi
 
 // --Fitur New File--
