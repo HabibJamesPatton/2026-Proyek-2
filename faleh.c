@@ -79,14 +79,28 @@ void Save(const Editor *ed)
 {
     if (strlen(global_filename) == 0)
     {
-        printf("[warning] Gunakan SaveAs terlebih dahulu untuk memberi nama file!\n");
+        char input_nama[256]
+        printf("[System] File belum memiliki nama.\n");
+        printf(">> Masukkan nama file untuk menyimpan:");
+
+        if (scanf("%255s", input_name) == 1)
+        {
+            SaveAs(ed, input_name);
+        }
+        else
+        {
+            printf("[Error] Input nama file tidak valid!\n");
+        }
         return;
     }
+
+    char temp_name[300];
+    snprintf(temp_name, sizeof(temp_name), "%s.tmp", global_filename);
 
     FILE *fptr = fopen(global_filename, "w");
     if (fptr == NULL)
     {
-        printf("[Error] Gagal menyimpan file!\n");
+        printf("[Error] Gagal membuat file sementara saat menyimpan '%s'!\n", global_filename);
         return;
         
     }
@@ -101,7 +115,16 @@ void Save(const Editor *ed)
     }
 
     fclose(fptr);
-    printf("[System] Perubahan pada '%s' berhasil disimpan. \n", global_filename);
+    remove(global_filename);
+
+    if (rename(temp_name, global_filename) == 0)
+    {
+        printf("[System] Perubahan pada '%s' berhasil disimpan secara aman.\n", global_filename);
+    }
+    else
+    {
+        printf("[Error] Gagal memperbarui file asli! File sementara tersimpan di '%s'\n", temp_name);
+    }
 }
 
 

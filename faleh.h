@@ -13,7 +13,7 @@ void New_File(Editor *ed); //-- Membuat file baru, memulai dengan buffer kosong,
 void Open_File(Editor *ed, const char *filename); //-- Mengambil data dari hardisk ke memori(RAM) agar bisa diedit--
 
 // -- Fitur Save As --
-void SaveAs(const Editor *ed, const char *filename,); //--Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke disk--
+void SaveAs(const Editor *ed, const char *filename); //--Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke disk--
 
 // -- Fitur Save --
 void Save(const Editor *ed); // -- Memindahkan data dari layar ke Disk --
