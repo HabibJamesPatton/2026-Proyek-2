@@ -18,6 +18,8 @@ typedef struct {
     int scrollY;        // Posisi scroll vertikal (atas-bawah)
     int scrollX;        // Posisi scroll horizontal (kiri-kanan)
     
+    Editor *undoSnapshot;
+
     char clipboard[2048]; // Buffer memori lokal untuk logika Copy/Cut/Paste
 } KanvasArea;
     
