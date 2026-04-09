@@ -83,7 +83,7 @@ void Save(const Editor *ed)
         printf("[System] File belum memiliki nama.\n");
         printf(">> Masukkan nama file untuk menyimpan:");
 
-        if (scanf("%255s", input_nama) == 1);
+        if (scanf("%255s", input_nama) == 1)
         {
             SaveAs(ed, input_nama);
         }
