@@ -1,5 +1,23 @@
 #include "raka.h"
 #include <string.h>
+#include <stdlib.h>
+
+void SaveUndoState(KanvasArea *textArea) {
+    // Jika tumpukan penuh, geser data ke kiri (buang foto yang paling usang)
+    if (textArea->undoCount >= MAX_UNDO_STEPS) {
+        editor_free(textArea->undoStack[0]);
+        free(textArea->undoStack[0]);
+        
+        for (int i = 1; i < MAX_UNDO_STEPS; i++) {
+            textArea->undoStack[i - 1] = textArea->undoStack[i];
+        }
+        textArea->undoCount--;
+    }
+    
+    // Tambahkan foto baru di posisi paling atas tumpukan
+    textArea->undoStack[textArea->undoCount] = editor_create_snapshot(textArea->editor);
+    textArea->undoCount++;
+}
 
 void UpdateKanvasArea(KanvasArea *textArea) {
     Vector2 mousePoint = GetMousePosition();
@@ -30,53 +48,84 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         if (textArea->blinkTimer >= 1.0f) textArea->blinkTimer = 0.0f;
 
         // 3. Implementasi Scroll Vertikal (Mouse Wheel)
-        textArea->scrollY -= GetMouseWheelMove() * 30; // 30px per scroll
+        textArea->scrollY -= GetMouseWheelMove() * 30;
         if (textArea->scrollY < 0) textArea->scrollY = 0;
 
         int tinggiTeksTotal = textArea->editor->total_lines * 20;
         int maxScrollY = tinggiTeksTotal - textArea->Kotak.height + 20;
 
-        if (maxScrollY < 0) maxScrollY = 0; // Jaga-jaga kalau teksnya sedikit
+        if (maxScrollY < 0) maxScrollY = 0;
         if (textArea->scrollY > maxScrollY) textArea->scrollY = maxScrollY;
 
-        // 4. Implementasi Hotkeys (Ctrl+C, Ctrl+X, Ctrl+V)
+        // 4. Implementasi Hotkeys (Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+Z)
         bool ctrlDown = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
 
         if (ctrlDown && IsKeyPressed(KEY_C)) {
-            // COPY
+            // COPY: Menyalin seluruh baris aktif ke Clipboard OS (Windows)
             const char* line_text = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
             if (line_text) {
-                strncpy(textArea->clipboard, line_text, sizeof(textArea->clipboard) - 1);
-                textArea->clipboard[sizeof(textArea->clipboard) - 1] = '\0';
+                SetClipboardText(line_text); // 
             }
         }
         else if (ctrlDown && IsKeyPressed(KEY_X)) {
-            // CUT
             const char* line_text = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
             if (line_text) {
-                strncpy(textArea->clipboard, line_text, sizeof(textArea->clipboard) - 1);
-                textArea->clipboard[sizeof(textArea->clipboard) - 1] = '\0';
+                SetClipboardText(line_text); 
+                
+                // PENGAMANAN: Pindahkan kursor ke paling kanan baris sebelum menghapus
+                // Agar backspace tidak memakan baris yang ada di atasnya
+                textArea->editor->cursor_col = textArea->editor->lines[textArea->editor->cursor_row].length;
+                
                 while(textArea->editor->lines[textArea->editor->cursor_row].length > 0) {
                     editor_backspace(textArea->editor);
                 }
             }
         }
         else if (ctrlDown && IsKeyPressed(KEY_V)) {
-            // PASTE dengan Auto-Enter kalau mentok
-            for (int i = 0; i < strlen(textArea->clipboard); i++) {
-                const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
-                int currentWidth = 0;
-                
-                if (currentLine) {
-                    currentWidth = MeasureText(currentLine, 20); 
-                }
+            // PASTE: Mengambil teks dari Clipboard OS (Windows)
+            const char* clipboardText = GetClipboardText(); // <- Ambil dari OS
+            
+            if (clipboardText != NULL) {
+                for (int i = 0; i < strlen(clipboardText); i++) {
+                    char charToPaste = clipboardText[i];
+                    
+                    // Filter 1: Abaikan karakter Carriage Return bawaan Windows (\r)
+                    if (charToPaste == '\r') continue;
+                    
+                    // Filter 2: Jika dari teks luar ada Enter, buat baris baru
+                    if (charToPaste == '\n') {
+                        editor_enter(textArea->editor);
+                        continue;
+                    }
+                    
+                    // Logika boundary check (Auto-Enter)
+                    const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
+                    int currentWidth = 0;
+                    if (currentLine) {
+                        currentWidth = MeasureText(currentLine, 20); 
+                    }
 
-                if (currentWidth + 15 < textArea->Kotak.width - 20) {
-                    editor_insert_char(textArea->editor, textArea->clipboard[i]);
-                } else {
-                    editor_enter(textArea->editor);
-                    editor_insert_char(textArea->editor, textArea->clipboard[i]);
+                    if (currentWidth + 15 < textArea->Kotak.width - 20) {
+                        editor_insert_char(textArea->editor, charToPaste);
+                    } else {
+                        editor_enter(textArea->editor);
+                        editor_insert_char(textArea->editor, charToPaste);
+                    }
                 }
+            }
+        }
+        if (ctrlDown && IsKeyPressed(KEY_Z)) {
+            // UNDO: Kembalikan keadaan dari snapshot
+            if (textArea->undoCount > 0) {
+                // Turunkan index ke posisi snapshot terakhir
+                textArea->undoCount--;
+
+                Editor *snapshot = textArea->undoStack[textArea->undoCount];
+                
+                editor_load_snapshot(textArea->editor, snapshot);
+
+                editor_free(snapshot);
+                free(snapshot);
             }
         }
 
@@ -88,11 +137,13 @@ void UpdateKanvasArea(KanvasArea *textArea) {
 
         // 6. Logika Menghapus (Backspace)
         if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
+            SaveUndoState(textArea);
             editor_backspace(textArea->editor);
         }
 
         // 7. Logika Baris Baru (Enter)
         if (IsKeyPressed(KEY_ENTER)) {
+            SaveUndoState(textArea);
             editor_enter(textArea->editor);
         }
 
@@ -109,6 +160,7 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                 }
 
                 if (currentWidth + 15 < textArea->Kotak.width - 20) {
+                    SaveUndoState(textArea);
                     editor_insert_char(textArea->editor, (char)charPressed);
                 }
             }
