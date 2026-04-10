@@ -30,10 +30,22 @@
 
     editor_get_line_text(const Editor *ed, int row) : Digunakan untuk mengambil string murni dari baris tertentu, baik untuk keperluan rendering (Raka) maupun penyimpanan file (Faleh).
 
-    2. raka.h
+   2. raka.h
    UpdateKanvasArea(KanvasArea *textArea) : Membaca dan memproses input dari user (klik mouse, scroll, keyboard, dan shortcut) untuk memperbarui status kanvas. Menangani logika interaksi visual seperti kedipan kursor, batasan scroll vertikal, integrasi OS Clipboard (Copy/Cut/Paste), serta menyimpan state untuk sistem Undo. Wajib dipanggil setiap frame di dalam loop utama sebelum proses rendering.
 
    DrawKanvasArea(KanvasArea *textArea) : Merender (menggambar) seluruh elemen visual kanvas ke layar menggunakan fungsi bawaan Raylib. Bertanggung jawab menampilkan kotak background, perubahan warna border saat fokus, memotong teks agar tidak keluar batas kanvas (Scissor Mode) saat di-scroll, dan menggambar kursor indikator teks. Wajib diletakkan di dalam blok BeginDrawing() dan EndDrawing().
+
+   3. faleh.h
+   void New_File(Editor *ed) : Membuat file baru, memulai dengan buffer kosong, dan mengatur nama file global menjadi string kosong. Fungsi ini juga memastikan bahwa editor siap untuk menerima input teks baru tanpa sisa data dari file sebelumnya.
+
+   void Open_File(Editor *ed, const char *filename) : Mengambil file yang terismpan di memori program agar bisa diedit, fungsi ini membuka file yang ditentukan dan memuat isinya kedalam editor.
+
+   void SaveAs(const Editor *ed, const char *filename) Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke penyimpanan program.
+
+   void Save(const Editor *ed) : Memindahkan data dari layar ke penyimpanan program,fungsi ini menyimpan perubahan yang telah dilakukan pada file yang sedang dibuka.
+
+   void Close_File(Editor *ed) : Memutus koneksi antara program dan file. Fungsi ini membersihkan buffer editor dan mengatur nama file global menjadi string kosong, sehingga editor kembali ke kondisi awal tanpa file yang terbuka.
+
 
 ## -Identitas kelompok-
   1. Nama       : Habib Burrohman
