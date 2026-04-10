@@ -1,43 +1,50 @@
 #ifndef HABIB_H
 #define HABIB_H
 
-// --- Struktur Baris Dinamis ---
 typedef struct {
-    char *data;         // Pointer ke array karakter (isi teks per baris)
-    int length;         // Jumlah karakter yang terisi saat ini
-    int capacity;       // Total memori yang disiapkan untuk baris ini
+    char *data;
+    int length;
+    int capacity;
 } Line;
 
-// --- Struktur Utama Editor ---
 typedef struct {
-    Line *lines;        // Array dinamis dari kumpulan baris (buffer utama)
-    int total_lines;    // Jumlah baris yang ada di editor
-    int lines_capacity; // Kapasitas alokasi baris (untuk penambahan baris)
-    int cursor_row;     // Posisi baris kursor (indeks array)
-    int cursor_col;     // Posisi kolom kursor (indeks karakter)
+    Line *lines;
+    int total_lines;
+    int lines_capacity;
+    int cursor_row;
+    int cursor_col;
 } Editor;
 
-// --- Inisialisasi & Memori ---
-void editor_init(Editor *ed);   // Menyiapkan memori awal saat aplikasi dibuka
-void editor_free(Editor *ed);   // Menghapus semua alokasi memori (cegah memory leak)
+#define MAX_HISTORY 20
 
-// --- Logika Pengetikan  ---
-void editor_insert_char(Editor *ed, char ch); // Menambah satu huruf di posisi kursor
-void editor_backspace(Editor *ed);            // Menghapus huruf atau menggabung baris
-void editor_enter(Editor *ed);                // Memecah satu baris menjadi dua baris baru
+typedef struct {
+    Editor data[MAX_HISTORY];
+    int top;
+} HistoryStack;
 
-// ---  Navigasi (Raka)  ---
-void editor_move_up(Editor *ed);    // Geser kursor ke atas dengan validasi batas
-void editor_move_down(Editor *ed);  // Geser kursor ke bawah dengan validasi batas
-void editor_move_left(Editor *ed);  // Geser kursor ke kiri (bisa pindah baris ke atas)
-void editor_move_right(Editor *ed); // Geser kursor ke kanan (bisa pindah baris ke bawah)
+extern HistoryStack undo_stack;
+extern HistoryStack redo_stack;
 
-// --- Fitur Undo/Redo (Pertemuan 6-7) ---
-Editor* editor_create_snapshot(const Editor *ed);        // Salin state saat ini ke Stack
-void editor_load_snapshot(Editor *dest, const Editor *src); // Ambil state dari Stack ke Editor
+void editor_init(Editor *ed);
+void editor_free(Editor *ed);
 
-// ---  File Operations (Faleh) ---
-void editor_append_line(Editor *ed, const char *text);      // Masukkan teks hasil Load File
-const char* editor_get_line_text(const Editor *ed, int row); // Ambil teks untuk proses Save File
+void editor_insert_char(Editor *ed, char ch);
+void editor_backspace(Editor *ed);
+void editor_enter(Editor *ed);
+
+void editor_move_up(Editor *ed);
+void editor_move_down(Editor *ed);
+void editor_move_left(Editor *ed);
+void editor_move_right(Editor *ed);
+
+void init_stacks();
+void push_undo(const Editor *current_state);
+void perform_undo(Editor *current_state);
+void perform_redo(Editor *current_state);
+Editor* editor_create_snapshot(const Editor *ed);
+void editor_load_snapshot(Editor *dest, const Editor *src);
+
+void editor_append_line(Editor *ed, const char *text);
+const char* editor_get_line_text(const Editor *ed, int row);
 
 #endif
