@@ -150,19 +150,54 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         // 8. Logika Mengetik Teks (Huruf, Angka, Spasi, Simbol)
         int charPressed = GetCharPressed();
         while (charPressed > 0) {
-            // Pastikan karakter adalah ASCII yang bisa diprint (32 sampai 125)
             if ((charPressed >= 32) && (charPressed <= 125)) {
-                const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
-                int currentWidth = 0;
                 
-                if (currentLine) {
-                    currentWidth = MeasureText(currentLine, 20); // Mengukur panjang teks saat ini
+                if (charPressed == 32) {
+                    SaveUndoState(textArea); // Simpan riwayat undo saat tekan Spasi
                 }
 
-                if (currentWidth + 15 < textArea->Kotak.width - 20) {
-                    SaveUndoState(textArea);
-                    editor_insert_char(textArea->editor, (char)charPressed);
+                const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
+                int currentWidth = 0;
+                if (currentLine) {
+                    currentWidth = MeasureText(currentLine, 20); 
                 }
+
+                // Ukur lebar huruf yang mau diketik
+                char tempStr[2] = { (char)charPressed, '\0' };
+                int charWidth = MeasureText(tempStr, 20);
+
+                // --- FITUR SMART WORD WRAP ---
+                // Jika baris ini ditambah huruf baru akan menabrak batas kanan (margin - 20)
+                if (currentWidth + charWidth >= textArea->Kotak.width - 20) {
+                    
+                    int col = textArea->editor->cursor_col;
+                    int stepsBack = 0;
+                    
+                    // 1. Mundur untuk mencari spasi terakhir di baris ini
+                    while (col > 0 && currentLine[col - 1] != ' ') {
+                        col--;
+                        stepsBack++;
+                    }
+                    
+                    // 2. Jika ketemu spasi, turunkan kata tersebut secara utuh
+                    if (col > 0 && stepsBack > 0) {
+                        // Geser kursor ke depan kata
+                        for (int i = 0; i < stepsBack; i++) editor_move_left(textArea->editor);
+                        
+                        // Enter! (Kata akan terdorong ke bawah)
+                        editor_enter(textArea->editor);
+                        
+                        // Kembalikan kursor ke ujung kata di baris yang baru
+                        for (int i = 0; i < stepsBack; i++) editor_move_right(textArea->editor);
+                    } 
+                    // 3. Jika ini kata super panjang tanpa spasi sama sekali, potong paksa karakternya
+                    else {
+                        editor_enter(textArea->editor);
+                    }
+                }
+
+                // Masukkan hurufnya setelah dipastikan aman dari batas margin
+                editor_insert_char(textArea->editor, (char)charPressed);
             }
             charPressed = GetCharPressed();
         }
