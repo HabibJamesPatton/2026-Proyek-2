@@ -23,8 +23,6 @@ typedef struct {
     Editor *undoStack[MAX_UNDO_STEPS];
     int undoCount;
 
-    Editor *undoSnapshot;
-
     char clipboard[2048]; // Buffer memori lokal untuk logika Copy/Cut/Paste
 } KanvasArea;
     
