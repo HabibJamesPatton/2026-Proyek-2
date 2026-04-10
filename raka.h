@@ -4,6 +4,8 @@
 #include "raylib.h"
 #include "habib.h" 
 
+#define MAX_UNDO_STEPS 50
+
 // Struktur data untuk elemen kanvas teks editor
 typedef struct {
     Rectangle Kotak;    // Menyimpan x, y, width, dan height
@@ -18,6 +20,9 @@ typedef struct {
     int scrollY;        // Posisi scroll vertikal (atas-bawah)
     int scrollX;        // Posisi scroll horizontal (kiri-kanan)
     
+    Editor *undoStack[MAX_UNDO_STEPS];
+    int undoCount;
+
     Editor *undoSnapshot;
 
     char clipboard[2048]; // Buffer memori lokal untuk logika Copy/Cut/Paste

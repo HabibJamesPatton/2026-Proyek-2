@@ -3,13 +3,20 @@
 #include <stdlib.h>
 
 void SaveUndoState(KanvasArea *textArea) {
-    // Jika sudah ada snapshot sebelumnya, hapus dulu agar tidak memory leak
-    if (textArea->undoSnapshot != NULL) {
-        editor_free(textArea->undoSnapshot);
-        free(textArea->undoSnapshot);
+    // Jika tumpukan penuh, geser data ke kiri (buang foto yang paling usang)
+    if (textArea->undoCount >= MAX_UNDO_STEPS) {
+        editor_free(textArea->undoStack[0]);
+        free(textArea->undoStack[0]);
+        
+        for (int i = 1; i < MAX_UNDO_STEPS; i++) {
+            textArea->undoStack[i - 1] = textArea->undoStack[i];
+        }
+        textArea->undoCount--;
     }
-    // Buat snapshot baru dari keadaan editor sekarang
-    textArea->undoSnapshot = editor_create_snapshot(textArea->editor);
+    
+    // Tambahkan foto baru di posisi paling atas tumpukan
+    textArea->undoStack[textArea->undoCount] = editor_create_snapshot(textArea->editor);
+    textArea->undoCount++;
 }
 
 void UpdateKanvasArea(KanvasArea *textArea) {
@@ -109,9 +116,16 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         }
         if (ctrlDown && IsKeyPressed(KEY_Z)) {
             // UNDO: Kembalikan keadaan dari snapshot
-            if (textArea->undoSnapshot != NULL) {
-                editor_load_snapshot(textArea->editor, textArea->undoSnapshot);
-                // Setelah load, kursor akan otomatis kembali ke posisi saat snapshot diambil
+            if (textArea->undoCount > 0) {
+                // Turunkan index ke posisi snapshot terakhir
+                textArea->undoCount--;
+
+                Editor *snapshot = textArea->undoStack[textArea->undoCount];
+                
+                editor_load_snapshot(textArea->editor, snapshot);
+
+                editor_free(snapshot);
+                free(snapshot);
             }
         }
 

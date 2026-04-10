@@ -30,6 +30,11 @@
 
     editor_get_line_text(const Editor *ed, int row) : Digunakan untuk mengambil string murni dari baris tertentu, baik untuk keperluan rendering (Raka) maupun penyimpanan file (Faleh).
 
+    2. raka.h
+   UpdateKanvasArea(KanvasArea *textArea) : Membaca dan memproses input dari user (klik mouse, scroll, keyboard, dan shortcut) untuk memperbarui status kanvas. Menangani logika interaksi visual seperti kedipan kursor, batasan scroll vertikal, integrasi OS Clipboard (Copy/Cut/Paste), serta menyimpan state untuk sistem Undo. Wajib dipanggil setiap frame di dalam loop utama sebelum proses rendering.
+
+   DrawKanvasArea(KanvasArea *textArea) : Merender (menggambar) seluruh elemen visual kanvas ke layar menggunakan fungsi bawaan Raylib. Bertanggung jawab menampilkan kotak background, perubahan warna border saat fokus, memotong teks agar tidak keluar batas kanvas (Scissor Mode) saat di-scroll, dan menggambar kursor indikator teks. Wajib diletakkan di dalam blok BeginDrawing() dan EndDrawing().
+
 ## -Identitas kelompok-
   1. Nama       : Habib Burrohman
      NIM        : 251511039
