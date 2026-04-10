@@ -40,7 +40,7 @@
 
    void Open_File(Editor *ed, const char *filename) : Mengambil file yang terismpan di memori program agar bisa diedit, fungsi ini membuka file yang ditentukan dan memuat isinya kedalam editor.
 
-   void SaveAs(const Editor *ed, const char *filename) Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke penyimpanan program.
+   void SaveAs(const Editor *ed, const char *filename) : Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke penyimpanan program.
 
    void Save(const Editor *ed) : Memindahkan data dari layar ke penyimpanan program,fungsi ini menyimpan perubahan yang telah dilakukan pada file yang sedang dibuka.
 
