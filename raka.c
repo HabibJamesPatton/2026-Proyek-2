@@ -2,23 +2,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-void SaveUndoState(KanvasArea *textArea) {
-    // Jika tumpukan penuh, geser data ke kiri (buang foto yang paling usang)
-    if (textArea->undoCount >= MAX_UNDO_STEPS) {
-        editor_free(textArea->undoStack[0]);
-        free(textArea->undoStack[0]);
-        
-        for (int i = 1; i < MAX_UNDO_STEPS; i++) {
-            textArea->undoStack[i - 1] = textArea->undoStack[i];
-        }
-        textArea->undoCount--;
-    }
-    
-    // Tambahkan foto baru di posisi paling atas tumpukan
-    textArea->undoStack[textArea->undoCount] = editor_create_snapshot(textArea->editor);
-    textArea->undoCount++;
-}
-
 void UpdateKanvasArea(KanvasArea *textArea) {
     Vector2 mousePoint = GetMousePosition();
 
@@ -115,18 +98,11 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             }
         }
         if (ctrlDown && IsKeyPressed(KEY_Z)) {
-            // UNDO: Kembalikan keadaan dari snapshot
-            if (textArea->undoCount > 0) {
-                // Turunkan index ke posisi snapshot terakhir
-                textArea->undoCount--;
+            perform_undo(textArea->editor);
+        }
 
-                Editor *snapshot = textArea->undoStack[textArea->undoCount];
-                
-                editor_load_snapshot(textArea->editor, snapshot);
-
-                editor_free(snapshot);
-                free(snapshot);
-            }
+        if (ctrlDown && IsKeyPressed(KEY_Y)){
+            perform_redo(textArea->editor);
         }
 
         // 5. Integrasi Navigasi Kursor (Arrow Keys)
@@ -137,13 +113,11 @@ void UpdateKanvasArea(KanvasArea *textArea) {
 
         // 6. Logika Menghapus (Backspace)
         if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
-            SaveUndoState(textArea);
             editor_backspace(textArea->editor);
         }
 
         // 7. Logika Baris Baru (Enter)
         if (IsKeyPressed(KEY_ENTER)) {
-            SaveUndoState(textArea);
             editor_enter(textArea->editor);
         }
 
@@ -151,10 +125,6 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         int charPressed = GetCharPressed();
         while (charPressed > 0) {
             if ((charPressed >= 32) && (charPressed <= 125)) {
-                
-                if (charPressed == 32) {
-                    SaveUndoState(textArea); // Simpan riwayat undo saat tekan Spasi
-                }
 
                 const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
                 int currentWidth = 0;
@@ -252,4 +222,4 @@ void DrawKanvasArea(KanvasArea *textArea) {
     }
 
     EndScissorMode();
-}
+}   

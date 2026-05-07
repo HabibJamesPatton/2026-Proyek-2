@@ -19,9 +19,6 @@ typedef struct {
     float blinkTimer;   // Timer untuk efek kursor berkedip
     int scrollY;        // Posisi scroll vertikal (atas-bawah)
     int scrollX;        // Posisi scroll horizontal (kiri-kanan)
-    
-    Editor *undoStack[MAX_UNDO_STEPS];
-    int undoCount;
 
     char clipboard[2048]; // Buffer memori lokal untuk logika Copy/Cut/Paste
 } KanvasArea;
