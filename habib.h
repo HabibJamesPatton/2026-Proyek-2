@@ -1,16 +1,21 @@
 #ifndef HABIB_H
 #define HABIB_H
 
-typedef struct {
-    char *data;
+// Perubahan untuk menggunakan struktur data linked list untuk menyimpan baris teks
+typedef char* infotype;
+typedef struct LineNode* address;
+typedef struct LineNode{
+    infotype data;
     int length;
     int capacity;
-} Line;
+    address next;
+    address prev;
+} LineNode;
 
-typedef struct {
-    Line *lines;
+typedef struct Editor{
+    address Head;
+    address Tail;
     int total_lines;
-    int lines_capacity;
     int cursor_row;
     int cursor_col;
 } Editor;
@@ -41,10 +46,14 @@ void init_stacks();
 void push_undo(const Editor *current_state);
 void perform_undo(Editor *current_state);
 void perform_redo(Editor *current_state);
-Editor* editor_create_snapshot(const Editor *ed);
-void editor_load_snapshot(Editor *dest, const Editor *src);
 
-void editor_append_line(Editor *ed, const char *text);
-const char* editor_get_line_text(const Editor *ed, int row);
+void editor_append_line(Editor *ed, const infotype text);
+const infotype editor_get_line_text(const Editor *ed, int row);
+
+// Post ETS - Operasi Node DLL
+address create_new_node(const infotype text);
+void free_node(address node);
+void insert_node_after(address prev_node, const infotype text);
+void delete_node(address node);
 
 #endif
