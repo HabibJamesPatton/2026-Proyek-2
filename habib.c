@@ -9,6 +9,64 @@
 HistoryStack undo_stack;
 HistoryStack redo_stack;
 
+// Post ETS - Operasi Node DLL
+static address create_node(const infotype text){
+    address node = (address)malloc(sizeof(LineNode));
+    if(!node) return NULL;
+
+    int len = strlen(text);
+    node->capacity = (len + INITIAL_LINE_LENGTH);
+    node->data = (infotype)malloc(node->capacity);
+    if(!node->data) { 
+        free(node); 
+        return NULL;
+    }
+
+    strcpy(node->data, text);
+    node->length = len;
+    node->next = NULL;
+    node->prev = NULL;
+    return node;
+}
+
+static void free_node(address node){
+    if(!node) return;
+    free(node->data);
+    free(node);
+}
+
+static void insert_after(Editor *ed, address target, address new_node){
+    address successor = target->next;
+
+    new_node->prev = target;
+    new_node->next = successor;
+    target->next = new_node;
+
+    if(successor != NULL){
+        successor->prev = new_node;
+    } else {
+        ed->Tail = new_node;
+    }
+
+    ed->total_lines++;
+}
+
+static void clean_node (Editor *ed, address node){
+    if(node->prev){
+        node->prev->next = node->next;
+    }else{
+        ed->Head = node->next;
+    }
+
+    if(node->next){
+        node->next->prev = node->prev;
+    }else{
+        ed->Tail = node->prev;
+    }
+
+    ed->total_lines--;
+}
+
 void init_stacks() {
     undo_stack.top = -1;
     redo_stack.top = -1;
@@ -78,42 +136,51 @@ void perform_redo(Editor *ed) {
     }
 }
 
+address editor_get_node(const Editor *ed, int row){
+    if (row < 0 || row >= ed->total_lines) return NULL;
+    address cursor = ed->Head;
+    for (int i = 0; i < row; i++){
+        cursor = cursor->next;
+    }
+    return cursor;
+}
+
 void editor_init(Editor *ed) {
-    ed->lines = (Line *)malloc(INITIAL_LINES_CAPACITY * sizeof(Line));
-    if (!ed->lines) exit(1);
+    address node = create_node("");
+    ed->Head = node;
+    ed->Tail = node;
     ed->total_lines = 1;
-    ed->lines_capacity = INITIAL_LINES_CAPACITY;
     ed->cursor_row = 0;
     ed->cursor_col = 0;
-    ed->lines[0].capacity = INITIAL_LINE_LENGTH;
-    ed->lines[0].length = 0;
-    ed->lines[0].data = (char *)malloc(INITIAL_LINE_LENGTH * sizeof(char));
-    if (!ed->lines[0].data) exit(1);
-    ed->lines[0].data[0] = '\0';
 }
 
 void editor_free(Editor *ed) {
-    for (int i = 0; i < ed->total_lines; i++) {
-        free(ed->lines[i].data);
+    address current = ed->Head; // current node yang akan dihapus
+    address temp; 
+    while(current != NULL){
+        temp = current;
+        current = current->next;
+        free_node(temp);
     }
-    free(ed->lines);
-    ed->lines = NULL;
+    ed->Head = NULL;
+    ed->Tail = NULL;
+    ed->total_lines = 0;
+    ed->cursor_row = 0;
+    ed->cursor_col = 0; 
 }
 
 void editor_insert_char(Editor *ed, char ch) {
-    push_undo(ed);
-    Line *current_line = &ed->lines[ed->cursor_row];
-    if (current_line->length + 1 >= current_line->capacity) {
-        current_line->capacity *= 2;
-        char *new_data = (char *)realloc(current_line->data, current_line->capacity * sizeof(char));
-        if (!new_data) return;
-        current_line->data = new_data;
+        address lines = editor_get_node(ed, ed->cursor_row);
+    if(lines == NULL) return;
+    if(lines->length + 1 >= lines->capacity){
+        lines->capacity *= 2;
+        char *new_data = (char *)realloc(lines->data, lines->capacity * sizeof(char));
+        if(!new_data) return;
+        lines->data = new_data;
     }
-    memmove(&current_line->data[ed->cursor_col + 1], 
-            &current_line->data[ed->cursor_col], 
-            current_line->length - ed->cursor_col + 1);
-    current_line->data[ed->cursor_col] = ch;
-    current_line->length++;
+    memmove(&lines->data[ed->cursor_col + 1], &lines->data[ed->cursor_col], lines->length - ed->cursor_col + 1);
+    lines->data[ed->cursor_col] = ch;
+    lines->length++;
     ed->cursor_col++;
 }
 

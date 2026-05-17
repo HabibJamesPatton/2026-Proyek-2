@@ -30,6 +30,7 @@ typedef struct {
 extern HistoryStack undo_stack;
 extern HistoryStack redo_stack;
 
+address editor_get_node(const Editor *ed, int row);
 void editor_init(Editor *ed);
 void editor_free(Editor *ed);
 
@@ -48,12 +49,7 @@ void perform_undo(Editor *current_state);
 void perform_redo(Editor *current_state);
 
 void editor_append_line(Editor *ed, const infotype text);
-const infotype editor_get_line_text(const Editor *ed, int row);
+const char* editor_get_line_text(const Editor *ed, int row);
 
-// Post ETS - Operasi Node DLL
-address create_new_node(const infotype text);
-void free_node(address node);
-void insert_node_after(address prev_node, const infotype text);
-void delete_node(address node);
 
 #endif
