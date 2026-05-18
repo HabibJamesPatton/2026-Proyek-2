@@ -104,35 +104,58 @@ void Save(const Editor *ed)
         return;
         
     }
-
-    for(int i = 0; i < ed->total_lines; i++)
-    {
-        const char *line_text = editor_get_line_text(ed, i);
-        if(line_text != NULL)
-        {
-            fprintf(fptr, "%s\n", line_text);
-        }
-    }
-
-    fclose(fptr);
-    remove(global_filename);
-
-    if (rename(temp_name, global_filename) == 0)
-    {
-        printf("[System] Perubahan pada '%s' berhasil disimpan secara aman.\n", global_filename);
-    }
-    else
-    {
-        printf("[Error] Gagal memperbarui file asli! File sementara tersimpan di '%s'\n", temp_name);
-    }
 }
 
-
-
-// Fungsi Close File //
-void Close_File(Editor *ed)
+    void Close_File(Editor *ed)
 {
     editor_free(ed);
     strcpy(global_filename, "");
     printf("[System] koneksi file diputus, Editor ditutup.\n");
 }
+
+void Rename_File() {
+    if (strlen(global_filename) == 0) {
+        printf("[System] Tidak ada file aktif untuk di-rename.\n");
+        return;
+    }
+    char input_nama[256];
+    printf("\n>> Masukkan nama file baru: ");
+    if (scanf("%255s", input_nama) == 1) {
+        if (rename(global_filename, input_nama) == 0) {
+            printf("[System] File berhasil di-rename menjadi: %s\n", input_nama);
+            strcpy(global_filename, input_nama);
+        } else {
+            printf("[Error] Gagal me-rename file.\n");
+        }
+    }
+}
+
+void Delete_File(Editor *ed) {
+    if (strlen(global_filename) == 0) {
+        printf("[System] Tidak ada file aktif untuk dihapus.\n");
+        return;
+    }
+    printf("\n>> Anda yakin ingin menghapus '%s' secara permanen? (y/n): ", global_filename);
+    char konfirmasi;
+    if (scanf(" %c", &konfirmasi) == 1 && (konfirmasi == 'y' || konfirmasi == 'Y')) {
+        if (remove(global_filename) == 0) {
+            printf("[System] File '%s' berhasil dihapus permanen.\n", global_filename);
+            New_File(ed); // Bersihkan editor karena file sudah tidak eksis
+        } else {
+            printf("[Error] Gagal menghapus file.\n");
+        }
+    } else {
+         printf("[System] Penghapusan file dibatalkan.\n");
+    }
+}
+
+void Close_File(Editor *ed) {
+    editor_free(ed);
+    strcpy(global_filename, "");
+    printf("[System] koneksi file diputus, Editor ditutup.\n");
+}
+
+
+
+
+// Fungsi Close File //
