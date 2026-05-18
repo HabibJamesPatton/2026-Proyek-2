@@ -18,7 +18,10 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             if (targetRow >= textArea->editor->total_lines) targetRow = textArea->editor->total_lines - 1;
             
             textArea->editor->cursor_row = targetRow;
-            textArea->editor->cursor_col = textArea->editor->lines[targetRow].length;
+            address clickedNode = editor_get_node(textArea->editor, targetRow);
+            if (clickedNode != NULL) {
+                textArea->editor->cursor_col = clickedNode->length;
+            }
             
         } else {
             textArea->isFocused = false;
@@ -57,10 +60,14 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                 
                 // PENGAMANAN: Pindahkan kursor ke paling kanan baris sebelum menghapus
                 // Agar backspace tidak memakan baris yang ada di atasnya
-                textArea->editor->cursor_col = textArea->editor->lines[textArea->editor->cursor_row].length;
-                
-                while(textArea->editor->lines[textArea->editor->cursor_row].length > 0) {
+            address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
+            if (currentNode != NULL) {
+                textArea->editor->cursor_col = currentNode->length;
+            
+                // Lakukan backspace selama panjang teks di baris (node) ini masih lebih dari 0
+                while(currentNode->length > 0) {
                     editor_backspace(textArea->editor);
+                    }
                 }
             }
         }
