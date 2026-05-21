@@ -94,24 +94,27 @@ void Save(const Editor *ed)
         return;
     }
 
-    char temp_name[300];
-    snprintf(temp_name, sizeof(temp_name), "%s.tmp", global_filename);
-
     FILE *fptr = fopen(global_filename, "w");
     if (fptr == NULL)
     {
-        printf("[Error] Gagal membuat file sementara saat menyimpan '%s'!\n", global_filename);
+        printf("[Error] Gagal menyimpan file '%s'!\n", global_filename);
         return;
         
     }
+
+    for (int i=0; i< ed -> total_lines: i++)
+    {
+        const char *line_text = editor_get_line_text(ed, i);
+        if (line_text != NULL)
+        {
+            fprintf(fptr, "%s\n", line-text);
+        }
+    }
+
+    fclose(fptr);
+    printf("[System] File berhasil disimpan: %s\n", global_filename);
 }
 
-    void Close_File(Editor *ed)
-{
-    editor_free(ed);
-    strcpy(global_filename, "");
-    printf("[System] koneksi file diputus, Editor ditutup.\n");
-}
 
 void Rename_File() {
     if (strlen(global_filename) == 0) {
