@@ -22,8 +22,7 @@ int main() {
         .isFocused = false,
         .editor = &myEditor, // Hubungkan kanvas Raka ke mesin Habib
         .scrollY = 0,
-        .blinkTimer = 0,
-        .undoCount = 0
+        .blinkTimer = 0
     };
 
     // --- VARIABEL UNTUK FITUR POP-UP ---
@@ -100,6 +99,20 @@ int main() {
         else {
             UpdateKanvasArea(&myCanvas);
 
+            bool ctrlDown = IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL);
+            if (ctrlDown && IsKeyPressed(KEY_S)) {
+                // Cek apakah file sudah punya nama
+                if (strlen(global_filename) == 0) {
+                    // Jika file baru, panggil GUI Pop-up Save As (seperti F1)
+                    showSaveDialog = true;
+                    saveFileName[0] = '\0'; 
+                    saveLetterCount = 0;
+                } else {
+                    // Jika sudah punya nama, langsung eksekusi mesin Save
+                    Save(&myEditor);
+                }
+            }
+            
             // Buka Pop-up Save As jika F1 ditekan
             if (IsKeyPressed(KEY_F1)) {
                 showSaveDialog = true;
@@ -117,6 +130,11 @@ int main() {
             // Tombol F3 biarkan (New File)
             if (IsKeyPressed(KEY_F3)) {
                 New_File(&myEditor);
+            }
+
+            // Tombol Ctrl+S untuk Save
+            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
+                Save(&myEditor);
             }
         }
 
