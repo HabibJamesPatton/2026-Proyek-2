@@ -155,7 +155,7 @@ void editor_init(Editor *ed) {
 }
 
 void editor_free(Editor *ed) {
-    address current = ed->Head; // current node yang akan dihapus
+    address current = ed->Head; 
     address temp; 
     while(current != NULL){
         temp = current;
@@ -185,73 +185,83 @@ void editor_insert_char(Editor *ed, char ch) {
 }
 
 void editor_backspace(Editor *ed) {
-    push_undo(ed);
-    Line *current_line = &ed->lines[ed->cursor_row];
+    address current_line = editor_get_node(ed, ed->cursor_row);
+    if (!current_line) return;
+
     if (ed->cursor_col > 0) {
-        memmove(&current_line->data[ed->cursor_col - 1], 
-                &current_line->data[ed->cursor_col], 
-                current_line->length - ed->cursor_col + 1);
+        memmove(
+            &current_line->data[ed->cursor_col - 1],
+            &current_line->data[ed->cursor_col],
+            current_line->length - ed->cursor_col + 1
+        );
         current_line->length--;
         ed->cursor_col--;
+
     } else if (ed->cursor_row > 0) {
-        Line *prev_line = &ed->lines[ed->cursor_row - 1];
+        address prev_line = current_line->prev;
         int new_col = prev_line->length;
-        if (prev_line->length + current_line->length + 1 > prev_line->capacity) {
-            prev_line->capacity = prev_line->length + current_line->length + INITIAL_LINE_LENGTH;
-            char *new_data = (char *)realloc(prev_line->data, prev_line->capacity * sizeof(char));
-            if (!new_data) return;
-            prev_line->data = new_data;
+
+        int total_len = prev_line->length + current_line->length;
+        if (total_len + 1 >= prev_line->capacity) {
+            prev_line->capacity = total_len + INITIAL_LINE_LENGTH;
+            char *buf = (char *)realloc(prev_line->data, prev_line->capacity);
+            if (!buf) return;
+            prev_line->data = buf;
         }
+
         strcpy(&prev_line->data[prev_line->length], current_line->data);
-        prev_line->length += current_line->length;
-        free(current_line->data);
-        memmove(&ed->lines[ed->cursor_row], 
-                &ed->lines[ed->cursor_row + 1], 
-                (ed->total_lines - ed->cursor_row - 1) * sizeof(Line));
-        ed->total_lines--;
+        prev_line->length = total_len;
+
+        clean_node(ed, current_line);
+        free_node(current_line);
+
         ed->cursor_row--;
         ed->cursor_col = new_col;
     }
 }
 
 void editor_enter(Editor *ed) {
-    push_undo(ed);
-    if (ed->total_lines >= ed->lines_capacity) {
-        ed->lines_capacity *= 2;
-        Line *new_lines = (Line *)realloc(ed->lines, ed->lines_capacity * sizeof(Line));
-        if (!new_lines) return;
-        ed->lines = new_lines;
-    }
-    Line *current_line = &ed->lines[ed->cursor_row];
-    memmove(&ed->lines[ed->cursor_row + 2], 
-            &ed->lines[ed->cursor_row + 1], 
-            (ed->total_lines - ed->cursor_row - 1) * sizeof(Line));
-    Line *new_line = &ed->lines[ed->cursor_row + 1];
+    address current_line = editor_get_node(ed, ed->cursor_row);
+    if (!current_line) return;
+
     int chars_to_move = current_line->length - ed->cursor_col;
-    new_line->capacity = chars_to_move + INITIAL_LINE_LENGTH;
-    new_line->data = (char *)malloc(new_line->capacity * sizeof(char));
-    if (!new_line->data) return;
-    strncpy(new_line->data, &current_line->data[ed->cursor_col], chars_to_move);
-    new_line->data[chars_to_move] = '\0';
-    new_line->length = chars_to_move;
-    current_line->data[ed->cursor_col] = '\0';
-    current_line->length = ed->cursor_col;
-    ed->total_lines++;
+    address new_line = create_node("");
+
+    if (chars_to_move > 0) {
+        if (chars_to_move + 1 >= new_line->capacity) {
+            new_line->capacity = chars_to_move + INITIAL_LINE_LENGTH;
+            new_line->data = (char *)realloc(new_line->data, new_line->capacity);
+        }
+        strncpy(new_line->data, &current_line->data[ed->cursor_col], chars_to_move);
+        new_line->data[chars_to_move] = '\0';
+        new_line->length = chars_to_move;
+
+        current_line->data[ed->cursor_col] = '\0';
+        current_line->length = ed->cursor_col;
+    }
+
+    insert_after(ed, current_line, new_line);
     ed->cursor_row++;
     ed->cursor_col = 0;
 }
 
 void editor_move_left(Editor *ed) {
-    if (ed->cursor_col > 0) ed->cursor_col--;
-    else if (ed->cursor_row > 0) {
+    if (ed->cursor_col > 0) {
+        ed->cursor_col--;
+    } else if (ed->cursor_row > 0) {
         ed->cursor_row--;
-        ed->cursor_col = ed->lines[ed->cursor_row].length;
+        address current_line = editor_get_node(ed, ed->cursor_row);
+        ed->cursor_col = current_line->length;
     }
 }
 
 void editor_move_right(Editor *ed) {
-    if (ed->cursor_col < ed->lines[ed->cursor_row].length) ed->cursor_col++;
-    else if (ed->cursor_row < ed->total_lines - 1) {
+    address current_line = editor_get_node(ed, ed->cursor_row);
+    if (!current_line) return;
+
+    if (ed->cursor_col < current_line->length) {
+        ed->cursor_col++;
+    } else if (ed->cursor_row < ed->total_lines - 1) {
         ed->cursor_row++;
         ed->cursor_col = 0;
     }
@@ -260,8 +270,9 @@ void editor_move_right(Editor *ed) {
 void editor_move_up(Editor *ed) {
     if (ed->cursor_row > 0) {
         ed->cursor_row--;
-        if (ed->cursor_col > ed->lines[ed->cursor_row].length) {
-            ed->cursor_col = ed->lines[ed->cursor_row].length;
+        address current_line = editor_get_node(ed, ed->cursor_row);
+        if (current_line && ed->cursor_col > current_line->length) {
+            ed->cursor_col = current_line->length;
         }
     }
 }
@@ -269,8 +280,9 @@ void editor_move_up(Editor *ed) {
 void editor_move_down(Editor *ed) {
     if (ed->cursor_row < ed->total_lines - 1) {
         ed->cursor_row++;
-        if (ed->cursor_col > ed->lines[ed->cursor_row].length) {
-            ed->cursor_col = ed->lines[ed->cursor_row].length;
+        address current_line = editor_get_node(ed, ed->cursor_row);
+        if (current_line && ed->cursor_col > current_line->length) {
+            ed->cursor_col = current_line->length;
         }
     }
 }
