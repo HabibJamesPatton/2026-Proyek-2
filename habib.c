@@ -67,73 +67,93 @@ static void clean_node (Editor *ed, address node){
     ed->total_lines--;
 }
 
+static void editor_clone_dll(Editor *dest, const Editor *src){
+    dest->Head = NULL;
+    dest->Tail = NULL;
+    dest->total_lines = 0;
+    dest->cursor_row = src->cursor_row;
+    dest->cursor_col = src->cursor_col;
+
+    address current = src->Head;
+    while(current != NULL){
+        address clone = create_node(current->data);
+        if(!clone) return;
+        clone->length = current->length;
+
+        if(dest->Head == NULL){
+            dest->Head = clone;
+            dest->Tail = clone;
+        }else{
+            clone->prev = dest->Tail;
+            dest->Tail->next = clone;
+            dest->Tail = clone;
+        }
+        dest->total_lines++;
+        current = current->next;
+    }
+}
+
+static void editor_free_data(Editor *ed){
+    address current = ed->Head;
+    while(current != NULL){
+        address temp = current->next;
+        free_node(current);
+        current = temp;
+    }
+    ed->Head = NULL;
+    ed->Tail = NULL;
+    ed->total_lines = 0;
+}
+
+static void clear_stack(HistoryStack *stack) {
+    while (stack->top >= 0) {                           
+    editor_free_data(&stack->data[stack->top]);     
+        stack->top--;                                   
+    }
+}
+
+static void push_to_stack(HistoryStack *stack, const Editor *ed) {
+    if (stack->top >= MAX_HISTORY - 1) {                      
+        editor_free_data(&stack->data[0]);                    
+        for (int i = 0; i < MAX_HISTORY - 1; i++) {          
+            stack->data[i] = stack->data[i + 1];             
+        }
+        stack->top = MAX_HISTORY - 2;                         
+    }
+    stack->top++;                                             
+    editor_clone_dll(&stack->data[stack->top], ed);           
+}
+
 void init_stacks() {
-    undo_stack.top = -1;
-    redo_stack.top = -1;
-}
-
-void clear_redo_stack() {
-    while(redo_stack.top >= 0) {
-        for(int i = 0; i < redo_stack.data[redo_stack.top].total_lines; i++) {
-            free(redo_stack.data[redo_stack.top].lines[i].data);
-        }
-        free(redo_stack.data[redo_stack.top].lines);
-        redo_stack.top--;
-    }
-}
-
-void free_stack_slot(HistoryStack *stack, int index) {
-    for(int i = 0; i < stack->data[index].total_lines; i++) {
-        free(stack->data[index].lines[i].data);
-    }
-    free(stack->data[index].lines);
-}
-
-void push_to_stack(HistoryStack *stack, const Editor *ed) {
-    if (stack->top >= MAX_HISTORY - 1) {
-        free_stack_slot(stack, 0);
-        for (int i = 0; i < MAX_HISTORY - 1; i++) {
-            stack->data[i] = stack->data[i+1];
-        }
-        stack->top = MAX_HISTORY - 2;
-    }
-    
-    stack->top++;
-    stack->data[stack->top].total_lines = ed->total_lines;
-    stack->data[stack->top].lines_capacity = ed->lines_capacity;
-    stack->data[stack->top].cursor_row = ed->cursor_row;
-    stack->data[stack->top].cursor_col = ed->cursor_col;
-    stack->data[stack->top].lines = (Line *)malloc(ed->lines_capacity * sizeof(Line));
-    
-    for (int i = 0; i < ed->total_lines; i++) {
-        stack->data[stack->top].lines[i].length = ed->lines[i].length;
-        stack->data[stack->top].lines[i].capacity = ed->lines[i].capacity;
-        stack->data[stack->top].lines[i].data = (char *)malloc(ed->lines[i].capacity * sizeof(char));
-        strcpy(stack->data[stack->top].lines[i].data, ed->lines[i].data);
-    }
+    undo_stack.top = -1;   
+    redo_stack.top = -1;   
 }
 
 void push_undo(const Editor *ed) {
     push_to_stack(&undo_stack, ed);
-    clear_redo_stack();
+    clear_stack(&redo_stack);
 }
 
 void perform_undo(Editor *ed) {
-    if (undo_stack.top >= 0) {
-        push_to_stack(&redo_stack, ed);
-        editor_load_snapshot(ed, &undo_stack.data[undo_stack.top]);
-        free_stack_slot(&undo_stack, undo_stack.top);
-        undo_stack.top--;
-    }
+    if (undo_stack.top < 0) return;
+
+    push_to_stack(&redo_stack, ed);                             
+
+    editor_free_data(ed);                                       
+    editor_clone_dll(ed, &undo_stack.data[undo_stack.top]);    
+
+    editor_free_data(&undo_stack.data[undo_stack.top]);       
+    undo_stack.top--;                                         
 }
 
+
 void perform_redo(Editor *ed) {
-    if (redo_stack.top >= 0) {
-        push_to_stack(&undo_stack, ed);
-        editor_load_snapshot(ed, &redo_stack.data[redo_stack.top]);
-        free_stack_slot(&redo_stack, redo_stack.top);
-        redo_stack.top--;
-    }
+    if (redo_stack.top < 0) return;
+    push_to_stack(&undo_stack, ed);
+    editor_free_data(ed);
+    editor_clone_dll(ed, &redo_stack.data[redo_stack.top]);
+    editor_free_data(&redo_stack.data[redo_stack.top]);
+    redo_stack.top--;
 }
 
 address editor_get_node(const Editor *ed, int row){
@@ -147,6 +167,7 @@ address editor_get_node(const Editor *ed, int row){
 
 void editor_init(Editor *ed) {
     address node = create_node("");
+    if(!node) return;
     ed->Head = node;
     ed->Tail = node;
     ed->total_lines = 1;
@@ -170,7 +191,7 @@ void editor_free(Editor *ed) {
 }
 
 void editor_insert_char(Editor *ed, char ch) {
-        address lines = editor_get_node(ed, ed->cursor_row);
+    address lines = editor_get_node(ed, ed->cursor_row);
     if(lines == NULL) return;
     if(lines->length + 1 >= lines->capacity){
         lines->capacity *= 2;
@@ -226,11 +247,14 @@ void editor_enter(Editor *ed) {
 
     int chars_to_move = current_line->length - ed->cursor_col;
     address new_line = create_node("");
+    if (!new_line) return;
 
     if (chars_to_move > 0) {
         if (chars_to_move + 1 >= new_line->capacity) {
-            new_line->capacity = chars_to_move + INITIAL_LINE_LENGTH;
-            new_line->data = (char *)realloc(new_line->data, new_line->capacity);
+           new_line->capacity = chars_to_move + INITIAL_LINE_LENGTH;
+           char *tmp = (char *)realloc(new_line->data, new_line->capacity);
+           if (!tmp) { free_node(new_line); return; }
+           new_line->data = tmp;
         }
         strncpy(new_line->data, &current_line->data[ed->cursor_col], chars_to_move);
         new_line->data[chars_to_move] = '\0';
@@ -287,61 +311,28 @@ void editor_move_down(Editor *ed) {
     }
 }
 
-Editor* editor_create_snapshot(const Editor *ed) {
-    Editor *snap = (Editor *)malloc(sizeof(Editor));
-    if (!snap) return NULL;
-    snap->total_lines = ed->total_lines;
-    snap->lines_capacity = ed->lines_capacity;
-    snap->cursor_row = ed->cursor_row;
-    snap->cursor_col = ed->cursor_col;
-    snap->lines = (Line *)malloc(snap->lines_capacity * sizeof(Line));
-    if (!snap->lines) { free(snap); return NULL; }
-    for (int i = 0; i < snap->total_lines; i++) {
-        snap->lines[i].length = ed->lines[i].length;
-        snap->lines[i].capacity = ed->lines[i].capacity;
-        snap->lines[i].data = (char *)malloc(snap->lines[i].capacity * sizeof(char));
-        strcpy(snap->lines[i].data, ed->lines[i].data);
+
+void editor_append_line(Editor *ed, const infotype text) {
+    address newNode = create_node(text);               
+
+    if(!newNode) return;
+    if (ed->Head == NULL) {                                    
+        ed->Head = newNode;                                  
+        ed->Tail = newNode;                                  
+    } else {
+        newNode->prev = ed->Tail;                            
+        ed->Tail->next = newNode;                            
+        ed->Tail = newNode;                                  
     }
-    return snap;
+
+    ed->total_lines++;                                         
 }
 
-void editor_load_snapshot(Editor *dest, const Editor *src) {
-    if (!dest || !src) return;
-    for (int i = 0; i < dest->total_lines; i++) {
-        free(dest->lines[i].data);
-    }
-    free(dest->lines);
-    dest->total_lines = src->total_lines;
-    dest->lines_capacity = src->lines_capacity;
-    dest->cursor_row = src->cursor_row;
-    dest->cursor_col = src->cursor_col;
-    dest->lines = (Line *)malloc(dest->lines_capacity * sizeof(Line));
-    for (int i = 0; i < dest->total_lines; i++) {
-        dest->lines[i].length = src->lines[i].length;
-        dest->lines[i].capacity = src->lines[i].capacity;
-        dest->lines[i].data = (char *)malloc(dest->lines[i].capacity * sizeof(char));
-        strcpy(dest->lines[i].data, src->lines[i].data);
-    }
-}
-
-void editor_append_line(Editor *ed, const char *text) {
-    if (ed->total_lines >= ed->lines_capacity) {
-        ed->lines_capacity *= 2;
-        ed->lines = (Line *)realloc(ed->lines, ed->lines_capacity * sizeof(Line));
-    }
-    int len = strlen(text);
-    Line *new_line = &ed->lines[ed->total_lines];
-    new_line->capacity = len + INITIAL_LINE_LENGTH;
-    new_line->data = (char *)malloc(new_line->capacity * sizeof(char));
-    if (!new_line->data) return;
-    strcpy(new_line->data, text);
-    new_line->length = len;
-    ed->total_lines++;
-}
 
 const char* editor_get_line_text(const Editor *ed, int row) {
-    if (row >= 0 && row < ed->total_lines) {
-        return ed->lines[row].data;
+    address node = editor_get_node(ed, row);  
+    if (node != NULL) {                        
+        return node->data;                       
     }
-    return NULL;
+    return NULL;                                 
 }
