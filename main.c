@@ -2,6 +2,7 @@
 #include "habib.h"  // Struktur Data
 #include "faleh.h"  // Logika File (Save/Open)
 #include "raka.h"   // Logika Tampilan/GUI
+#include <string.h> // Untuk fungsi string seperti strlen, strcpy, dll.
 
 int main() {
     // --- 1. INISIALISASI (Bagian Habib & Raka) ---
@@ -12,6 +13,7 @@ int main() {
     // Siapkan Mesin Editor (Habib)
     Editor myEditor;
     editor_init(&myEditor);
+    init_stacks(); 
 
     // Siapkan Area Tampilan (Raka)
     KanvasArea myCanvas = {
