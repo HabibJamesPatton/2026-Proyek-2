@@ -58,6 +58,7 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             if (line_text) {
                 SetClipboardText(line_text); 
                 
+                push_undo(textArea->editor); 
                 // PENGAMANAN: Pindahkan kursor ke paling kanan baris sebelum menghapus
                 // Agar backspace tidak memakan baris yang ada di atasnya
             address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
@@ -74,32 +75,33 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         else if (ctrlDown && IsKeyPressed(KEY_V)) {
             // PASTE: Mengambil teks dari Clipboard OS (Windows)
             const char* clipboardText = GetClipboardText(); // <- Ambil dari OS
-            
+
             if (clipboardText != NULL) {
-                for (int i = 0; i < strlen(clipboardText); i++) {
-                    char charToPaste = clipboardText[i];
-                    
-                    // Filter 1: Abaikan karakter Carriage Return bawaan Windows (\r)
-                    if (charToPaste == '\r') continue;
-                    
-                    // Filter 2: Jika dari teks luar ada Enter, buat baris baru
-                    if (charToPaste == '\n') {
+                push_undo(textArea->editor);
+
+                size_t len = strlen(clipboardText);
+                for (size_t i = 0; i < len; i++) {
+                    char ch = clipboardText[i];
+
+                    // Abaikan CR (\r)
+                    if (ch == '\r') continue;
+
+                    // Jika ada newline, buat baris baru
+                    if (ch == '\n') {
                         editor_enter(textArea->editor);
                         continue;
                     }
-                    
-                    // Logika boundary check (Auto-Enter)
+
+                    // Boundary check (Auto-Enter) berdasarkan lebar teks
                     const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
                     int currentWidth = 0;
-                    if (currentLine) {
-                        currentWidth = MeasureText(currentLine, 20); 
-                    }
+                    if (currentLine) currentWidth = MeasureText(currentLine, 20);
 
                     if (currentWidth + 15 < textArea->Kotak.width - 20) {
-                        editor_insert_char(textArea->editor, charToPaste);
+                        editor_insert_char(textArea->editor, ch);
                     } else {
                         editor_enter(textArea->editor);
-                        editor_insert_char(textArea->editor, charToPaste);
+                        editor_insert_char(textArea->editor, ch);
                     }
                 }
             }
@@ -120,25 +122,30 @@ void UpdateKanvasArea(KanvasArea *textArea) {
 
         // 6. Logika Menghapus (Backspace)
         if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
+            push_undo(textArea->editor);
             editor_backspace(textArea->editor);
         }
 
         // 7. Logika Baris Baru (Enter)
         if (IsKeyPressed(KEY_ENTER)) {
+            push_undo(textArea->editor);
             editor_enter(textArea->editor);
         }
 
         // 8. Logika Mengetik Teks (Huruf, Angka, Spasi, Simbol)
         int charPressed = GetCharPressed();
+        
+        if (charPressed > 0) {
+            push_undo(textArea->editor);
+        }
+
         while (charPressed > 0) {
             if ((charPressed >= 32) && (charPressed <= 125)) {
-
                 const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
                 int currentWidth = 0;
                 if (currentLine) {
                     currentWidth = MeasureText(currentLine, 20); 
                 }
-
                 // Ukur lebar huruf yang mau diketik
                 char tempStr[2] = { (char)charPressed, '\0' };
                 int charWidth = MeasureText(tempStr, 20);
