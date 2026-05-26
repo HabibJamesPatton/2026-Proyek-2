@@ -18,6 +18,12 @@ void SaveAs(const Editor *ed, const char *filename); //--Membuat file baru atau 
 // -- Fitur Save --
 void Save(const Editor *ed); // -- Memindahkan data dari layar ke Disk --
 
+// -- Fitur Rename File --
+void Rename_File(); // -- Mengubah nama file yang sedang aktif --
+
+// -- Fitur Delete File --
+void Delete_File(Editor *ed); // -- Menghapus file yang sedang aktif dari disk dan membersihkan buffer --
+
 // -- Fitur Close File --
 void Close_File(Editor *ed); // -- Memutus koneksi antara program dan file --
 
