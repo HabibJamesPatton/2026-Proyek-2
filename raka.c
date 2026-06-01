@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 void UpdateKanvasArea(KanvasArea *textArea) {
+    static bool lastWasSeparator = true;
     Vector2 mousePoint = GetMousePosition();
 
     // 1. Integrasi Mouse Click (Fokus & Pindah Kursor)
@@ -120,27 +121,41 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         if (IsKeyPressed(KEY_LEFT)) editor_move_left(textArea->editor);
         if (IsKeyPressed(KEY_RIGHT)) editor_move_right(textArea->editor);
 
+        static bool lastWasSeparator = true;
+
         // 6. Logika Menghapus (Backspace)
         if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
             push_undo(textArea->editor);
             editor_backspace(textArea->editor);
+            lastWasSeparator = true;
         }
 
         // 7. Logika Baris Baru (Enter)
         if (IsKeyPressed(KEY_ENTER)) {
             push_undo(textArea->editor);
             editor_enter(textArea->editor);
+            lastWasSeparator = true;
         }
 
         // 8. Logika Mengetik Teks (Huruf, Angka, Spasi, Simbol)
         int charPressed = GetCharPressed();
-        
-        if (charPressed > 0) {
-            push_undo(textArea->editor);
-        }
 
         while (charPressed > 0) {
             if ((charPressed >= 32) && (charPressed <= 125)) {
+
+                bool isSeparator = (charPressed == ' ' || charPressed == '\t' || charPressed == '\n' || charPressed == '.' || charPressed == ',' || charPressed == ';' || charPressed == ':' || charPressed == '!' || charPressed == '?');
+                if (isSeparator){
+                    if (!lastWasSeparator){
+                        push_undo(textArea->editor);
+                    }
+                    lastWasSeparator = true;
+                }else{
+                    if (lastWasSeparator){
+                        push_undo(textArea->editor);
+                    }
+                    lastWasSeparator = false;   
+                }
+
                 const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
                 int currentWidth = 0;
                 if (currentLine) {

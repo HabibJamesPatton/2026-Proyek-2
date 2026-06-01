@@ -133,11 +133,6 @@ int main() {
             if (IsKeyPressed(KEY_F3)) {
                 New_File(&myEditor);
             }
-
-            // Tombol Ctrl+S untuk Save
-            if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_S)) {
-                Save(&myEditor);
-            }
         }
 
         // --- 3. RENDERING (Tampilan) ---
