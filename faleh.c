@@ -26,8 +26,11 @@ void Open_File(Editor *ed, const char *filename)
         }
 
         editor_free(ed);
-        editor_init(ed);
+        ed->Head = NULL;
+        ed->Tail = NULL;
         ed->total_lines = 0;
+        ed->cursor_row = 0;
+        ed->cursor_col = 0;
 
         strncpy(global_filename, filename, sizeof(global_filename)-1);
         global_filename[sizeof(global_filename)-1] = '\0';
@@ -60,7 +63,7 @@ void SaveAs(const Editor *ed, const char *filename)
         return;
     }
 
-    for(int i = 0; i < ed->total_lines; i++)
+    for (int i = 0; i < ed->total_lines; i++)
     {
         const char *line_text = editor_get_line_text(ed, i);
         if(line_text != NULL)
@@ -102,12 +105,12 @@ void Save(const Editor *ed)
         
     }
 
-    for (int i=0; i< ed -> total_lines: i++)
+    for (int i=0; i< ed -> total_lines; i++)
     {
         const char *line_text = editor_get_line_text(ed, i);
         if (line_text != NULL)
         {
-            fprintf(fptr, "%s\n", line-text);
+            fprintf(fptr, "%s\n", line_text);
         }
     }
 
@@ -154,6 +157,7 @@ void Delete_File(Editor *ed) {
 
 void Close_File(Editor *ed) {
     editor_free(ed);
+    editor_init(ed);
     strcpy(global_filename, "");
     printf("[System] koneksi file diputus, Editor ditutup.\n");
 }
