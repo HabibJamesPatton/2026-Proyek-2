@@ -11,6 +11,8 @@ void New_File(Editor *ed)
     {
         editor_free(ed);
         editor_init(ed);
+        clear_stack(&undo_stack);
+        clear_stack(&redo_stack);
 
         global_filename[0]='\0';
         printf("[System] Buffer disiapkan untuk file baru.\n");
@@ -26,6 +28,8 @@ void Open_File(Editor *ed, const char *filename)
         }
 
         editor_free(ed);
+        clear_stack(&undo_stack);
+        clear_stack(&redo_stack);
         ed->Head = NULL;
         ed->Tail = NULL;
         ed->total_lines = 0;
@@ -114,6 +118,8 @@ void Save(const Editor *ed)
 void Close_File(Editor *ed) {
     editor_free(ed);
     editor_init(ed);
+    clear_stack(&undo_stack);
+    clear_stack(&redo_stack);
     strcpy(global_filename, "");
     printf("[System] koneksi file diputus, Editor ditutup.\n");
 }
