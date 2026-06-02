@@ -185,6 +185,8 @@ int main() {
 
     // --- 4. CLEANUP (Bagian Habib) ---
     editor_free(&myEditor);
+    clear_stack(&undo_stack);
+    clear_stack(&redo_stack);
     CloseWindow();
 
     return 0;

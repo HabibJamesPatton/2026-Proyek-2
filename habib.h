@@ -47,6 +47,7 @@ void init_stacks();
 void push_undo(const Editor *current_state);
 void perform_undo(Editor *current_state);
 void perform_redo(Editor *current_state);
+void clear_stack(HistoryStack *stack);
 
 void editor_append_line(Editor *ed, const infotype text);
 const char* editor_get_line_text(const Editor *ed, int row);

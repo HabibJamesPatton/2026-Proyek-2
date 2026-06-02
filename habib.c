@@ -36,8 +36,8 @@ static void free_node(address node){
 }
 
 static void insert_after(Editor *ed, address target, address new_node){
+    if (!target || !new_node) return;
     address successor = target->next;
-
     new_node->prev = target;
     new_node->next = successor;
     target->next = new_node;
@@ -51,7 +51,7 @@ static void insert_after(Editor *ed, address target, address new_node){
     ed->total_lines++;
 }
 
-static void clean_node (Editor *ed, address node){
+static void unlink_node (Editor *ed, address node){
     if(node->prev){
         node->prev->next = node->next;
     }else{
@@ -67,6 +67,18 @@ static void clean_node (Editor *ed, address node){
     ed->total_lines--;
 }
 
+static void editor_free_data(Editor *ed){
+    address current = ed->Head;
+    while(current != NULL){
+        address temp = current->next;
+        free_node(current);
+        current = temp;
+    }
+    ed->Head = NULL;
+    ed->Tail = NULL;
+    ed->total_lines = 0;
+}
+
 static void editor_clone_dll(Editor *dest, const Editor *src){
     dest->Head = NULL;
     dest->Tail = NULL;
@@ -77,7 +89,10 @@ static void editor_clone_dll(Editor *dest, const Editor *src){
     address current = src->Head;
     while(current != NULL){
         address clone = create_node(current->data);
-        if(!clone) return;
+        if(!clone) {
+            editor_free_data(dest);
+            return;
+        }
         clone->length = current->length;
 
         if(dest->Head == NULL){
@@ -93,32 +108,16 @@ static void editor_clone_dll(Editor *dest, const Editor *src){
     }
 }
 
-static void editor_free_data(Editor *ed){
-    address current = ed->Head;
-    while(current != NULL){
-        address temp = current->next;
-        free_node(current);
-        current = temp;
-    }
-    ed->Head = NULL;
-    ed->Tail = NULL;
-    ed->total_lines = 0;
-}
-
-static void clear_stack(HistoryStack *stack) {
-    while (stack->top >= 0) {                           
-    editor_free_data(&stack->data[stack->top]);     
-        stack->top--;                                   
-    }
-}
-
 static void push_to_stack(HistoryStack *stack, const Editor *ed) {
     if (stack->top >= MAX_HISTORY - 1) {                      
         editor_free_data(&stack->data[0]);                    
         for (int i = 0; i < MAX_HISTORY - 1; i++) {          
             stack->data[i] = stack->data[i + 1];             
         }
-        stack->top = MAX_HISTORY - 2;                         
+        stack->top = MAX_HISTORY - 2;
+        stack->data[MAX_HISTORY - 1].Head = NULL;
+        stack->data[MAX_HISTORY - 1].Tail = NULL;
+        stack->data[MAX_HISTORY - 1].total_lines = 0;                         
     }
     stack->top++;                                             
     editor_clone_dll(&stack->data[stack->top], ed);           
@@ -127,6 +126,13 @@ static void push_to_stack(HistoryStack *stack, const Editor *ed) {
 void init_stacks() {
     undo_stack.top = -1;   
     redo_stack.top = -1;   
+}
+
+void clear_stack(HistoryStack *stack) {
+    while (stack->top >= 0) {                           
+    editor_free_data(&stack->data[stack->top]);     
+        stack->top--;                                   
+    }
 }
 
 void push_undo(const Editor *ed) {
@@ -233,7 +239,7 @@ void editor_backspace(Editor *ed) {
         strcpy(&prev_line->data[prev_line->length], current_line->data);
         prev_line->length = total_len;
 
-        clean_node(ed, current_line);
+        unlink_node(ed, current_line);
         free_node(current_line);
 
         ed->cursor_row--;
