@@ -71,7 +71,8 @@ void SaveAs(const Editor *ed, const char *filename)
             fprintf(fptr, "%s\n", line_text);
         }
     }
-    strcpy(global_filename, filename);
+    strncpy(global_filename, filename, sizeof(global_filename) -1 );
+    global_filename[sizeof(global_filename) -1] = '\0';
     fclose(fptr);
     printf("[System] File berhasil disimpan sebagai: %s\n", filename);
     
@@ -82,18 +83,9 @@ void Save(const Editor *ed)
 {
     if (strlen(global_filename) == 0)
     {
-        char input_nama[256];
+      
         printf("[System] File belum memiliki nama.\n");
-        printf(">> Masukkan nama file untuk menyimpan:");
-
-        if (scanf("%255s", input_nama) == 1)
-        {
-            SaveAs(ed, input_nama);
-        }
-        else
-        {
-            printf("[Error] Input nama file tidak valid!\n");
-        }
+       
         return;
     }
 
@@ -118,42 +110,6 @@ void Save(const Editor *ed)
     printf("[System] File berhasil disimpan: %s\n", global_filename);
 }
 
-
-void Rename_File() {
-    if (strlen(global_filename) == 0) {
-        printf("[System] Tidak ada file aktif untuk di-rename.\n");
-        return;
-    }
-    char input_nama[256];
-    printf("\n>> Masukkan nama file baru: ");
-    if (scanf("%255s", input_nama) == 1) {
-        if (rename(global_filename, input_nama) == 0) {
-            printf("[System] File berhasil di-rename menjadi: %s\n", input_nama);
-            strcpy(global_filename, input_nama);
-        } else {
-            printf("[Error] Gagal me-rename file.\n");
-        }
-    }
-}
-
-void Delete_File(Editor *ed) {
-    if (strlen(global_filename) == 0) {
-        printf("[System] Tidak ada file aktif untuk dihapus.\n");
-        return;
-    }
-    printf("\n>> Anda yakin ingin menghapus '%s' secara permanen? (y/n): ", global_filename);
-    char konfirmasi;
-    if (scanf(" %c", &konfirmasi) == 1 && (konfirmasi == 'y' || konfirmasi == 'Y')) {
-        if (remove(global_filename) == 0) {
-            printf("[System] File '%s' berhasil dihapus permanen.\n", global_filename);
-            New_File(ed); // Bersihkan editor karena file sudah tidak eksis
-        } else {
-            printf("[Error] Gagal menghapus file.\n");
-        }
-    } else {
-         printf("[System] Penghapusan file dibatalkan.\n");
-    }
-}
 
 void Close_File(Editor *ed) {
     editor_free(ed);
