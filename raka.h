@@ -16,7 +16,6 @@ typedef struct {
     
     float blinkTimer;   // Timer untuk efek kursor berkedip
     int scrollY;        // Posisi scroll vertikal (atas-bawah)
-    int scrollX;        // Posisi scroll horizontal (kiri-kanan)
 
 } KanvasArea;
     
