@@ -3,7 +3,6 @@
 #include <stdlib.h>
 
 void UpdateKanvasArea(KanvasArea *textArea) {
-    static bool lastWasSeparator = true;
     Vector2 mousePoint = GetMousePosition();
 
     // 1. Integrasi Mouse Click (Fokus & Pindah Kursor)
@@ -21,7 +20,18 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             textArea->editor->cursor_row = targetRow;
             address clickedNode = editor_get_node(textArea->editor, targetRow);
             if (clickedNode != NULL) {
-                textArea->editor->cursor_col = clickedNode->length;
+                int relX = mousePoint.x - textArea->Kotak.x - 5;
+                int bestCol = 0;
+
+                for (int c = 0; c <= clickedNode->length; c++) {
+                    char temp[1024] = {0};
+                    if (c > 0 && c <= 1023) strncpy(temp, clickedNode->data, c);
+                    int w = MeasureText(temp, 20);
+
+                    if (w <= relX) bestCol = c;
+                    else break;
+                }
+                textArea->editor->cursor_col = bestCol;
             }
             
         } else {
@@ -69,6 +79,9 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                 // Lakukan backspace selama panjang teks di baris (node) ini masih lebih dari 0
                 while(currentNode->length > 0) {
                     editor_backspace(textArea->editor);
+                    }
+                    if (textArea->editor->cursor_row > 0) {
+                        editor_backspace(textArea->editor);
                     }
                 }
             }
@@ -158,44 +171,38 @@ void UpdateKanvasArea(KanvasArea *textArea) {
 
                 const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
                 int currentWidth = 0;
-                if (currentLine) {
-                    currentWidth = MeasureText(currentLine, 20); 
-                }
-                // Ukur lebar huruf yang mau diketik
+                if (currentLine) currentWidth = MeasureText(currentLine, 20);
+
                 char tempStr[2] = { (char)charPressed, '\0' };
                 int charWidth = MeasureText(tempStr, 20);
 
-                // --- FITUR SMART WORD WRAP ---
-                // Jika baris ini ditambah huruf baru akan menabrak batas kanan (margin - 20)
                 if (currentWidth + charWidth >= textArea->Kotak.width - 20) {
-                    
+
                     int col = textArea->editor->cursor_col;
                     int stepsBack = 0;
-                    
+
                     // 1. Mundur untuk mencari spasi terakhir di baris ini
                     while (col > 0 && currentLine[col - 1] != ' ') {
                         col--;
                         stepsBack++;
                     }
-                    
+
                     // 2. Jika ketemu spasi, turunkan kata tersebut secara utuh
                     if (col > 0 && stepsBack > 0) {
                         // Geser kursor ke depan kata
                         for (int i = 0; i < stepsBack; i++) editor_move_left(textArea->editor);
-                        
-                        // Enter! (Kata akan terdorong ke bawah)
+                        // Enter!
                         editor_enter(textArea->editor);
                         
                         // Kembalikan kursor ke ujung kata di baris yang baru
                         for (int i = 0; i < stepsBack; i++) editor_move_right(textArea->editor);
-                    } 
-                    // 3. Jika ini kata super panjang tanpa spasi sama sekali, potong paksa karakternya
+                    }
+                    // 3. Jika ini kata panjang tanpa spasi sama sekali, potong paksa karakternya
                     else {
                         editor_enter(textArea->editor);
                     }
                 }
 
-                // Masukkan hurufnya setelah dipastikan aman dari batas margin
                 editor_insert_char(textArea->editor, (char)charPressed);
             }
             charPressed = GetCharPressed();
@@ -224,7 +231,7 @@ void DrawKanvasArea(KanvasArea *textArea) {
         if (posY + lineHeight > textArea->Kotak.y && posY < textArea->Kotak.y + textArea->Kotak.height) {
             const char* textToDraw = editor_get_line_text(textArea->editor, i);
             if (textToDraw) {
-                DrawText(textToDraw, startX - textArea->scrollX, posY, 20, textArea->textColor);
+                DrawText(textToDraw, startX, posY, 20, textArea->textColor);
             }
         }
     }
@@ -238,11 +245,15 @@ void DrawKanvasArea(KanvasArea *textArea) {
         const char* currentLineText = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
         
         if (currentLineText && textArea->editor->cursor_col > 0) {
-            strncpy(temp, currentLineText, textArea->editor->cursor_col);
+            int colToCopy = textArea->editor->cursor_col;
+            if (colToCopy > 1023) colToCopy = 1023;  // ← BATAS AMAN
+            
+            strncpy(temp, currentLineText, colToCopy);
+            temp[colToCopy] = '\0';
         }
         
         int textWidth = MeasureText(temp, 20);
-        int cursorPosX = startX + textWidth - textArea->scrollX;
+        int cursorPosX = startX + textWidth;
 
         // Gambar kursor hanya jika posisinya berada di dalam jangkauan visual kanvas
         if (cursorPosY >= textArea->Kotak.y && cursorPosY <= textArea->Kotak.y + textArea->Kotak.height) {
