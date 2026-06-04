@@ -5,7 +5,7 @@
 #include "faleh.h"
 #include "habib.h"
 
-char global_filename[256] = "";
+char global_filename[FILENAME_MAXLEN] = "";
 
 // Fungsi mengambil lokasi folder Documents Windows //
 void GetDocumentsPath(char *path)
@@ -29,11 +29,11 @@ static void BuildFullPath(char *FullPath, const char *docPath, const char *filen
 
     if(already_txt)
     {
-        snprintf(fullPath, MAX_PATH, "%s\\%s", docPath, filename);
+        snprintf(FullPath, MAX_PATH, "%s\\%s", docPath, filename);
     }
     else
     {
-        snprintf(fullPath, MAX_PATH, "%s\\%s.txt", docPath, filename);
+        snprintf(FullPath, MAX_PATH, "%s\\%s.txt", docPath, filename);
     }
 }
 
@@ -105,7 +105,7 @@ void Open_File(Editor *ed, const char *filename)
 // Fungsi Save As //
 void SaveAs(const Editor *ed, const char *filename)
 {
-    if (ed == NULL || filename == NUL || filename[0] == '\0')
+    if (ed == NULL || filename == NULL || filename[0] == '\0')
     {
         printf("[Error] Parameter tidak valid.\n");
         return;
