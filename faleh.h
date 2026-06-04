@@ -1,9 +1,10 @@
 #ifndef FALEH_H
 #define FALEH_H
+#define FILENAME_MAXLEN 260
 #include "habib.h"
 
 //Deklarasi variabel global untuk nama file extern char global_filename[256];
-extern char global_filename[256];
+extern char global_filename[FILENAME_MAXLEN];
 //Deklarasi Fungsi
 
 // --Fitur New File--
