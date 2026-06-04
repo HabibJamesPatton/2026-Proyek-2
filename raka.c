@@ -3,6 +3,8 @@
 #include <stdlib.h>
 
 void UpdateKanvasArea(KanvasArea *textArea) {
+    if (!textArea || !textArea->editor) return;
+
     Vector2 mousePoint = GetMousePosition();
 
     // 1. Integrasi Mouse Click (Fokus & Pindah Kursor)
@@ -22,10 +24,11 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             if (clickedNode != NULL) {
                 int relX = mousePoint.x - textArea->Kotak.x - 5;
                 int bestCol = 0;
+                char temp[1024] = {0};
 
                 for (int c = 0; c <= clickedNode->length; c++) {
-                    char temp[1024] = {0};
                     if (c > 0 && c <= 1023) strncpy(temp, clickedNode->data, c);
+                    else if (c == 0) temp[0] = '\0';
                     int w = MeasureText(temp, 20);
 
                     if (w <= relX) bestCol = c;
@@ -67,18 +70,16 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         else if (ctrlDown && IsKeyPressed(KEY_X)) {
             const char* line_text = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
             if (line_text) {
-                SetClipboardText(line_text); 
-                
+                SetClipboardText(line_text);                
                 push_undo(textArea->editor); 
                 // PENGAMANAN: Pindahkan kursor ke paling kanan baris sebelum menghapus
                 // Agar backspace tidak memakan baris yang ada di atasnya
-            address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
-            if (currentNode != NULL) {
-                textArea->editor->cursor_col = currentNode->length;
-            
+                address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
+                if (currentNode != NULL) {
+                    textArea->editor->cursor_col = currentNode->length;
                 // Lakukan backspace selama panjang teks di baris (node) ini masih lebih dari 0
-                while(currentNode->length > 0) {
-                    editor_backspace(textArea->editor);
+                    while(currentNode->length > 0) {
+                        editor_backspace(textArea->editor);
                     }
                     if (textArea->editor->cursor_row > 0) {
                         editor_backspace(textArea->editor);
@@ -111,7 +112,10 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                     int currentWidth = 0;
                     if (currentLine) currentWidth = MeasureText(currentLine, 20);
 
-                    if (currentWidth + 15 < textArea->Kotak.width - 20) {
+                    char tempStr[2] = { ch, '\0' };
+                    int charWidth = MeasureText(tempStr, 20);
+
+                    if (currentWidth + charWidth < textArea->Kotak.width - 20) {
                         editor_insert_char(textArea->editor, ch);
                     } else {
                         editor_enter(textArea->editor);
@@ -134,39 +138,64 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         if (IsKeyPressed(KEY_LEFT)) editor_move_left(textArea->editor);
         if (IsKeyPressed(KEY_RIGHT)) editor_move_right(textArea->editor);
 
-        static bool lastWasSeparator = true;
+        // Auto-scroll: pastikan kursor selalu terlihat
+        {
+            int cursorScreenY = 5 + (textArea->editor->cursor_row * 20) - textArea->scrollY;
+            if (cursorScreenY + 20 > textArea->Kotak.height) {
+                textArea->scrollY = (textArea->editor->cursor_row * 20) - textArea->Kotak.height + 25;
+            }
+            if (cursorScreenY < 5) {
+                textArea->scrollY = textArea->editor->cursor_row * 20;
+            }
+        }
 
         // 6. Logika Menghapus (Backspace)
         if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
             push_undo(textArea->editor);
             editor_backspace(textArea->editor);
-            lastWasSeparator = true;
+            textArea->lastWasSeparator = true;
+
+            int cursorScreenY = 5 + (textArea->editor->cursor_row * 20) - textArea->scrollY;
+            if (cursorScreenY + 20 > textArea->Kotak.height) {
+                textArea->scrollY = (textArea->editor->cursor_row * 20) - textArea->Kotak.height + 25;
+            }
+            if (cursorScreenY < 5) {
+                textArea->scrollY = textArea->editor->cursor_row * 20;
+            }
         }
 
         // 7. Logika Baris Baru (Enter)
         if (IsKeyPressed(KEY_ENTER)) {
             push_undo(textArea->editor);
             editor_enter(textArea->editor);
-            lastWasSeparator = true;
+            textArea->lastWasSeparator = true;
+
+            int cursorScreenY = 5 + (textArea->editor->cursor_row * 20) - textArea->scrollY;
+            if (cursorScreenY + 20 > textArea->Kotak.height) {
+                textArea->scrollY = (textArea->editor->cursor_row * 20) - textArea->Kotak.height + 25;
+            }
+            if (cursorScreenY < 5) {
+                textArea->scrollY = textArea->editor->cursor_row * 20;
+            }
         }
 
         // 8. Logika Mengetik Teks (Huruf, Angka, Spasi, Simbol)
         int charPressed = GetCharPressed();
 
         while (charPressed > 0) {
-            if ((charPressed >= 32) && (charPressed <= 125)) {
+            if ((charPressed >= 32) && (charPressed <= 126)) {
 
                 bool isSeparator = (charPressed == ' ' || charPressed == '\t' || charPressed == '\n' || charPressed == '.' || charPressed == ',' || charPressed == ';' || charPressed == ':' || charPressed == '!' || charPressed == '?');
                 if (isSeparator){
-                    if (!lastWasSeparator){
+                    if (!textArea->lastWasSeparator){
                         push_undo(textArea->editor);
                     }
-                    lastWasSeparator = true;
+                    textArea->lastWasSeparator = true;
                 }else{
-                    if (lastWasSeparator){
+                    if (textArea->lastWasSeparator){
                         push_undo(textArea->editor);
                     }
-                    lastWasSeparator = false;   
+                    textArea->lastWasSeparator = false;
                 }
 
                 const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
@@ -180,7 +209,8 @@ void UpdateKanvasArea(KanvasArea *textArea) {
 
                     int col = textArea->editor->cursor_col;
                     int stepsBack = 0;
-
+                    
+                    const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
                     // 1. Mundur untuk mencari spasi terakhir di baris ini
                     while (col > 0 && currentLine[col - 1] != ' ') {
                         col--;
@@ -204,6 +234,17 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                 }
 
                 editor_insert_char(textArea->editor, (char)charPressed);
+
+                // Auto-scroll saat pengetikan
+                {
+                    int cursorScreenY = 5 + (textArea->editor->cursor_row * 20) - textArea->scrollY;
+                    if (cursorScreenY + 20 > textArea->Kotak.height) {
+                        textArea->scrollY = (textArea->editor->cursor_row * 20) - textArea->Kotak.height + 25;
+                    }
+                    if (cursorScreenY < 5) {
+                        textArea->scrollY = textArea->editor->cursor_row * 20;
+                    }
+                }
             }
             charPressed = GetCharPressed();
         }
@@ -211,6 +252,8 @@ void UpdateKanvasArea(KanvasArea *textArea) {
 }
 
 void DrawKanvasArea(KanvasArea *textArea) {
+    if (!textArea || !textArea->editor) return;
+
     // 1. Gambar kotak dasar GUI
     DrawRectangleRec(textArea->Kotak, textArea->bgColor);
     Color currentBorder = textArea->isFocused ? BLUE : textArea->borderColor;
