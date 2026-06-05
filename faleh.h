@@ -11,13 +11,13 @@ extern char global_filename[FILENAME_MAXLEN];
 void New_File(Editor *ed); //-- Membuat file baru, memulai dengan buffer kosong, dan mengatur nama file global menjadi string kosong--
 
 // -- Fitur open file --
-void Open_File(Editor *ed, const char *filename); //-- Mengambil data dari hardisk ke memori(RAM) agar bisa diedit--
+int Open_File(Editor *ed, const char *filename); //-- Mengambil data dari hardisk ke memori(RAM) agar bisa diedit--
 
 // -- Fitur Save As --
-void SaveAs(const Editor *ed, const char *filename); //--Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke disk--
+int SaveAs(const Editor *ed, const char *filename); //--Membuat file baru atau menimpa file lama dengan nama spesifik, memindahkan data dari layar ke disk--
 
 // -- Fitur Save --
-void Save(const Editor *ed); // -- Memindahkan data dari layar ke Disk --
+int Save(const Editor *ed); // -- Memindahkan data dari layar ke Disk --
 
 // -- Fitur Close File --
 void Close_File(Editor *ed); // -- Memutus koneksi antara program dan file --

@@ -43,12 +43,12 @@ void New_File(Editor *ed)
     }
 
 // Fungsi Open File //
-void Open_File(Editor *ed, const char *filename)
+int Open_File(Editor *ed, const char *filename)
     {
         if (ed == NULL || filename == NULL || filename[0] == '\0')
         {
             printf("[Error] Parameter tidak valid.\n");
-            return;
+            return 0; // Gagal (parameter null atau kosong)
         }
 
         char docPath[MAX_PATH];
@@ -61,7 +61,7 @@ void Open_File(Editor *ed, const char *filename)
         FILE *fptr = fopen(fullPath, "r");
         if (fptr == NULL) {
             printf("[Error] File tidak ditemukan:\n%s\n" , fullPath);
-            return;
+            return 0;  // Gagal(file tidak ada/tidak bisa dibaca)
         }
 
         editor_free(ed);
@@ -90,16 +90,17 @@ void Open_File(Editor *ed, const char *filename)
 
         fclose(fptr);
         printf("[System] Berhasil memuat file:\n%s\n", fullPath);
+        return 1; // sukses membuat file!
         
     }
 
 // Fungsi Save As //
-void SaveAs(const Editor *ed, const char *filename)
+int SaveAs(const Editor *ed, const char *filename)
 {
     if (ed == NULL || filename == NULL || filename[0] == '\0')
     {
         printf("[Error] Parameter tidak valid.\n");
-        return;
+        return 0; // Gagagl (parameter null atau kosong)
     }
     char docPath[MAX_PATH];
     char fullPath[MAX_PATH];
@@ -112,7 +113,7 @@ void SaveAs(const Editor *ed, const char *filename)
     if (fptr == NULL) 
     {
         printf("[Error] Tidak dapat membuat file: \n%s\n", fullPath);
-        return;
+        return 0; // Gagal (tidak punya izin tulis atau path salah)
     }
 
     for (int i = 0; i < ed->total_lines; i++)
@@ -128,22 +129,22 @@ void SaveAs(const Editor *ed, const char *filename)
      global_filename[MAX_PATH - 1] = '\0';
 
      printf("[System] File berhasil disimpan:\n%s\n", fullPath);
-    
+     return 1; // sukses menyimpan file baru!
 }
 
 // Fungsi Save File //
-void Save(const Editor *ed)
+int Save(const Editor *ed)
 {
     if (ed == NULL)
     {
         printf("[Error] Editor tidak valid.\n");
-        return;
+        return 0; // Gagal
     }
 
     if (strlen(global_filename) == 0)
     {
         printf("[System] Gunakan Save As terlebih dahulu.\n");
-        return;
+        return 0; // Gagal
     }
         
 
@@ -152,7 +153,7 @@ void Save(const Editor *ed)
     if (fptr == NULL)
     {
         printf("[Error] Gagal menyimpan file .\n");
-        return;
+        return 0; // Gagal
         
     }
 
@@ -168,6 +169,7 @@ void Save(const Editor *ed)
 
     fclose(fptr);
     printf("[System] File berhasil disimpan.\n");
+    return 1; // Sukses!
 }
 
 // Fungsi Close File //
