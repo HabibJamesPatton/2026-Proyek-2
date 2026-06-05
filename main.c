@@ -4,6 +4,12 @@
 #include "raka.h"   // Logika Tampilan/GUI
 #include <string.h> // Untuk fungsi string seperti strlen, strcpy, dll.
 
+#define SHOW_TOAST(msg, col) do { \
+    strncpy(toastMsg, msg, 127); \
+    toastColor = col; \
+    toastTimer = 2.5f; \
+} while(0)
+
 int main() {
     // --- 1. INISIALISASI (Bagian Habib & Raka) ---
     InitWindow(800, 600, "Text Editor Tim Kelompok");
@@ -38,6 +44,14 @@ int main() {
     char openFileName[256] = "";
     int openLetterCount = 0;
 
+    // 3. Variabel Konfirmasi New File
+    bool showNewFileConfirm = false;
+
+    // 4. Variabel Toast Notification
+    char toastMsg[128] = "";
+    Color toastColor = GREEN;
+    float toastTimer = 0.0f;
+
     // --- 2. LOOP UTAMA ---
     while (!WindowShouldClose()) {
         
@@ -61,7 +75,9 @@ int main() {
 
             if (IsKeyPressed(KEY_ENTER)) {
                 if (saveLetterCount > 0) { 
-                    SaveAs(&myEditor, saveFileName);
+                    int ok = SaveAs(&myEditor, saveFileName);
+                    if (ok) SHOW_TOAST("File berhasil disimpan!", GREEN);
+                    else    SHOW_TOAST("Gagal menyimpan file!", RED);
                 }
                 showSaveDialog = false; 
             }
@@ -89,7 +105,9 @@ int main() {
 
             if (IsKeyPressed(KEY_ENTER)) {
                 if (openLetterCount > 0) { 
-                    Open_File(&myEditor, openFileName);
+                    int ok = Open_File(&myEditor, openFileName);
+                    if (ok) SHOW_TOAST("File berhasil dibuka!", GREEN);
+                    else    SHOW_TOAST("File tidak ditemukan!", RED);
                 }
                 showOpenDialog = false; 
             }
@@ -97,7 +115,19 @@ int main() {
             if (IsKeyPressed(KEY_ESCAPE)) showOpenDialog = false; 
         }
 
-        // --- C. JIKA POP-UP TUTUP, JALANKAN EDITOR SEPERTI BIASA ---
+        // --- C. LOGIKA POP-UP KONFIRMASI NEW FILE (Tombol F3) ---
+        else if (showNewFileConfirm) {
+            if (IsKeyPressed(KEY_ENTER)) {
+                New_File(&myEditor);
+                SHOW_TOAST("Buffer baru disiapkan.", GREEN);
+                showNewFileConfirm = false;
+            }
+            if (IsKeyPressed(KEY_ESCAPE)) {
+                showNewFileConfirm = false;
+            }
+        }
+
+        // --- D. JIKA POP-UP TUTUP, JALANKAN EDITOR SEPERTI BIASA ---
         else {
             UpdateKanvasArea(&myCanvas);
 
@@ -111,7 +141,9 @@ int main() {
                     saveLetterCount = 0;
                 } else {
                     // Jika sudah punya nama, langsung eksekusi mesin Save
-                    Save(&myEditor);
+                    int ok = Save(&myEditor);
+                    if (ok) SHOW_TOAST("File berhasil disimpan!", GREEN);
+                    else    SHOW_TOAST("Gagal menyimpan file!", RED);
                 }
             }
             
@@ -129,9 +161,16 @@ int main() {
                 openLetterCount = 0;
             }
 
-            // Tombol F3 biarkan (New File)
+            // Tombol F3 (New File) dengan konfirmasi
             if (IsKeyPressed(KEY_F3)) {
-                New_File(&myEditor);
+                const char* firstLine = editor_get_line_text(&myEditor, 0);
+                bool editorEmpty = (myEditor.total_lines == 1 && firstLine && strlen(firstLine) == 0);
+                if (editorEmpty) {
+                    New_File(&myEditor);
+                    SHOW_TOAST("Buffer baru disiapkan.", GREEN);
+                } else {
+                    showNewFileConfirm = true;
+                }
             }
         }
 
@@ -178,6 +217,36 @@ int main() {
                 }
 
                 DrawText("Tekan ENTER untuk Buka, ESC untuk Batal", 220, 310, 15, GRAY);
+            }
+
+            // --- MENGGAMBAR POP-UP KONFIRMASI NEW FILE ---
+            if (showNewFileConfirm) {
+                DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, 0.5f));
+                
+                DrawRectangle(200, 200, 400, 150, RAYWHITE);
+                DrawRectangleLines(200, 200, 400, 150, ORANGE); 
+                DrawText("⚠ Buat File Baru?", 220, 220, 18, ORANGE);
+                
+                DrawText("Perubahan yang belum disimpan akan", 220, 255, 16, BLACK);
+                DrawText("hilang. Lanjutkan?", 220, 275, 16, BLACK);
+                
+                DrawText("Tekan ENTER untuk Ya, ESC untuk Batal", 220, 310, 15, GRAY);
+            }
+
+            // --- MENGGAMBAR TOAST NOTIFICATION ---
+            if (toastTimer > 0) {
+                toastTimer -= GetFrameTime();
+                
+                // Hitung alpha untuk efek fade out (1 detik terakhir)
+                float alpha = (toastTimer < 1.0f) ? toastTimer : 1.0f;
+                
+                int tw = MeasureText(toastMsg, 18) + 20;
+                int tx = GetScreenWidth() - tw - 10;
+                int ty = GetScreenHeight() - 45;
+                
+                Color bg = Fade(toastColor, alpha * 0.85f);
+                DrawRectangle(tx, ty, tw, 35, bg);
+                DrawText(toastMsg, tx + 10, ty + 9, 18, Fade(WHITE, alpha));
             }
 
         EndDrawing();
