@@ -11,6 +11,7 @@ void UpdateKanvasArea(KanvasArea *textArea) {
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         if (CheckCollisionPointRec(mousePoint, textArea->Kotak)) {
             textArea->isFocused = true;
+            textArea->lastWasSeparator = true;
             
             // Konversi posisi klik Y (mouse) menjadi indeks baris kursor Habib
             int relY = mousePoint.y - textArea->Kotak.y - 5 + textArea->scrollY;
@@ -133,10 +134,10 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         }
 
         // 5. Integrasi Navigasi Kursor (Arrow Keys)
-        if (IsKeyPressed(KEY_UP)) editor_move_up(textArea->editor);
-        if (IsKeyPressed(KEY_DOWN)) editor_move_down(textArea->editor);
-        if (IsKeyPressed(KEY_LEFT)) editor_move_left(textArea->editor);
-        if (IsKeyPressed(KEY_RIGHT)) editor_move_right(textArea->editor);
+        if (IsKeyPressed(KEY_UP)) editor_move_up(textArea->editor);textArea->lastWasSeparator = true;
+        if (IsKeyPressed(KEY_DOWN)) editor_move_down(textArea->editor);textArea->lastWasSeparator = true;
+        if (IsKeyPressed(KEY_LEFT)) editor_move_left(textArea->editor);textArea->lastWasSeparator = true;
+        if (IsKeyPressed(KEY_RIGHT)) editor_move_right(textArea->editor);textArea->lastWasSeparator = true;
 
         // Auto-scroll: pastikan kursor selalu terlihat
         {
