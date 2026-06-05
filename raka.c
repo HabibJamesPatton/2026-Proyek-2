@@ -150,7 +150,7 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         }
         
         // 6. Logika Menghapus (Backspace)
-        if (IsKeyPressedRepeat(KEY_BACKSPACE)) {
+        if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
             if (IsKeyPressed(KEY_BACKSPACE))  push_undo(textArea->editor);
             bool wasMerge = (textArea->editor->cursor_col == 0 && textArea->editor->cursor_row > 0);
             editor_backspace(textArea->editor);
