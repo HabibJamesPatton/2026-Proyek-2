@@ -134,10 +134,10 @@ void UpdateKanvasArea(KanvasArea *textArea) {
         }
 
         // 5. Integrasi Navigasi Kursor (Arrow Keys)
-        if (IsKeyPressed(KEY_UP)) editor_move_up(textArea->editor);textArea->lastWasSeparator = true;
-        if (IsKeyPressed(KEY_DOWN)) editor_move_down(textArea->editor);textArea->lastWasSeparator = true;
-        if (IsKeyPressed(KEY_LEFT)) editor_move_left(textArea->editor);textArea->lastWasSeparator = true;
-        if (IsKeyPressed(KEY_RIGHT)) editor_move_right(textArea->editor);textArea->lastWasSeparator = true;
+        if (IsKeyPressed(KEY_UP)) { editor_move_up(textArea->editor); textArea->lastWasSeparator = true; }
+        if (IsKeyPressed(KEY_DOWN)) { editor_move_down(textArea->editor); textArea->lastWasSeparator = true; }
+        if (IsKeyPressed(KEY_LEFT)) { editor_move_left(textArea->editor); textArea->lastWasSeparator = true; }
+        if (IsKeyPressed(KEY_RIGHT)) { editor_move_right(textArea->editor); textArea->lastWasSeparator = true; }
 
         // Auto-scroll: pastikan kursor selalu terlihat
         {
