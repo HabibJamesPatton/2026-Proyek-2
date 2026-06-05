@@ -149,15 +149,16 @@ void UpdateKanvasArea(KanvasArea *textArea) {
             }
         }
         
-        if (IsKeyPressed(KEY_BACKSPACE)){
-            push_undo(textArea->editor);
-        }
         // 6. Logika Menghapus (Backspace)
         if (IsKeyPressedRepeat(KEY_BACKSPACE)) {
+            if (IsKeyPressed(KEY_BACKSPACE))  push_undo(textArea->editor);
+            bool wasMerge = (textArea->editor->cursor_col == 0 && textArea->editor->cursor_row > 0);
             editor_backspace(textArea->editor);
             textArea->lastWasSeparator = true;
 
             // Boundary check setelah backspace
+        if (!wasMerge){
+
             const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
             int currentWidth = 0;
             if (currentLine) currentWidth = MeasureText(currentLine, 20);
@@ -202,6 +203,7 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                     }
                 }
             }
+        
             // Jika baris punya ruang → coba tarik baris bawah ke atas
             else {
                 address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
@@ -225,6 +227,7 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                     }
                 }
             }
+        }
 
             int cursorScreenY = 5 + (textArea->editor->cursor_row * 20) - textArea->scrollY;
             if (cursorScreenY + 20 > textArea->Kotak.height) {
