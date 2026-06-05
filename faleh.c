@@ -10,7 +10,7 @@ char global_filename[FILENAME_MAXLEN] = "";
 // Fungsi mengambil lokasi folder Documents Windows //
 void GetDocumentsPath(char *path)
 {
-    strcpy(path, "C:\\Users\\Lenovo\\Proyek-2");
+    GetCurrentDirectory(MAX_PATH, path);
 }
 
 static void BuildFullPath(char *FullPath, const char *docPath, const char *filename)
