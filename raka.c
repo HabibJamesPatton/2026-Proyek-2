@@ -148,12 +148,83 @@ void UpdateKanvasArea(KanvasArea *textArea) {
                 textArea->scrollY = textArea->editor->cursor_row * 20;
             }
         }
-
-        // 6. Logika Menghapus (Backspace)
-        if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
+        
+        if (IsKeyPressed(KEY_BACKSPACE)){
             push_undo(textArea->editor);
+        }
+        // 6. Logika Menghapus (Backspace)
+        if (IsKeyPressedRepeat(KEY_BACKSPACE)) {
             editor_backspace(textArea->editor);
             textArea->lastWasSeparator = true;
+
+            // Boundary check setelah backspace
+            const char* currentLine = editor_get_line_text(textArea->editor, textArea->editor->cursor_row);
+            int currentWidth = 0;
+            if (currentLine) currentWidth = MeasureText(currentLine, 20);
+
+            // Jika baris meluap setelah merge → re-wrap dari titik overflow
+            if (currentWidth >= textArea->Kotak.width - 20) {
+                address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
+                if (currentNode) {
+                    // Cari kolom di mana teks mulai melebihi batas lebar
+                    char temp[1024] = {0};
+                    int overflowCol = currentNode->length;
+                    for (int c = 1; c <= currentNode->length && c <= 1023; c++) {
+                        strncpy(temp, currentNode->data, c);
+                        temp[c] = '\0';
+                        if (MeasureText(temp, 20) >= textArea->Kotak.width - 20) {
+                            overflowCol = c - 1;
+                            if (overflowCol < 1) overflowCol = 1;
+                            break;
+                        }
+                    }
+
+                    // Cari spasi terakhir sebelum titik overflow untuk word-wrap
+                    int spacePos = overflowCol;
+                    while (spacePos > 0 && currentNode->data[spacePos - 1] != ' ') {
+                        spacePos--;
+                    }
+                    int breakCol = (spacePos > 0) ? spacePos : overflowCol;
+
+                    // Simpan posisi kursor, lalu potong baris di breakCol
+                    int savedCol = textArea->editor->cursor_col;
+                    textArea->editor->cursor_col = breakCol;
+                    editor_enter(textArea->editor);
+
+                    // Kembalikan kursor ke posisi yang benar
+                    if (savedCol >= breakCol) {
+                        // Kursor setelah titik potong → pindah ke baris baru
+                        textArea->editor->cursor_col = savedCol - breakCol;
+                    } else {
+                        // Kursor sebelum titik potong → kembali ke baris atas
+                        textArea->editor->cursor_row--;
+                        textArea->editor->cursor_col = savedCol;
+                    }
+                }
+            }
+            // Jika baris punya ruang → coba tarik baris bawah ke atas
+            else {
+                address currentNode = editor_get_node(textArea->editor, textArea->editor->cursor_row);
+                if (currentNode && currentNode->next) {
+                    address nextNode = currentNode->next;
+                    char combined[2048] = {0};
+                    int combinedLen = currentNode->length + nextNode->length;
+                    if (combinedLen < 2047) {
+                        if (currentNode->length > 0) memcpy(combined, currentNode->data, currentNode->length);
+                        memcpy(combined + currentNode->length, nextNode->data, nextNode->length);
+                        combined[combinedLen] = '\0';
+
+                        int combinedWidth = MeasureText(combined, 20);
+                        if (combinedWidth < textArea->Kotak.width - 20) {
+                            int savedCol = textArea->editor->cursor_col;
+                            textArea->editor->cursor_row++;
+                            textArea->editor->cursor_col = 0;
+                            editor_backspace(textArea->editor);
+                            textArea->editor->cursor_col = savedCol;
+                        }
+                    }
+                }
+            }
 
             int cursorScreenY = 5 + (textArea->editor->cursor_row * 20) - textArea->scrollY;
             if (cursorScreenY + 20 > textArea->Kotak.height) {
